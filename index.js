@@ -1,14 +1,17 @@
 const express = require('express');
-const cors = require('cors');
-const port = process.env.PORT || 3000
-const app = express()
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
-// middlewere
-app.use(cors())
-app.use(express.json())
+const cors = require('cors');
+require('dotenv').config();
 
-const uri = "mongodb+srv://skeletonDB:oDiHqEmt7A1Z8f0a@tanvir369.ymezqkm.mongodb.net/?appName=Tanvir369";
+const app = express();
+const port = process.env.PORT || 5000;
 
+// Middleware
+app.use(cors());
+app.use(express.json());
+
+// MongoDB Connection
+const uri = process.env.MONGODB_URI; 
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
@@ -17,79 +20,61 @@ const client = new MongoClient(uri, {
   }
 });
 
-app.get('/' , (req, res) => {
-    res.send("the server is running from port 3000")
-})
-
 async function run() {
-    try {
-        await client.connect()
+  try {
+        await client.connect(); 
+    // Connect to the "traveleeDB" database
+    const database = client.db("traveleeDB");
+    const destinationsCollection = database.collection("destinations");
+    const reviewsCollection = database.collection("reviews");
+    const usersCollection = database.collection("users");
 
-        const skeletonDB = client.db("skeletondb")
-        const collection = skeletonDB.collection("books")
+    // --- API ROUTES ---
 
-        // post operations
-        app.post('/books', async(req, res) => {
-            const newBooks = req.body;
-            const result = await collection.insertOne(newBooks)
-            res.send(result)
-        })
+    // 1. Get all destinations (For Search/Filter)
+    app.get('/destinations', async (req, res) => {
+        const{city, category} = req.query;
+        let query = {};
 
-        //delete operations
-        app.delete('/books/:id', async(req, res) => {
-            const id = req.params.id
-            const query = {_id: new ObjectId(id)}
-            const result = await collection.deleteOne(query)
-            res.send(result)
-        })
-
-        // update operations
-        app.patch('/books/:id', async (req, res) =>{
-            const id = req.params.id
-            const query = {_id: new ObjectId(id)}
-            const updateNEW = req.body
-            const update = {
-                $set: {
-                    title: updateNEW.title,
-                    price: updateNEW.price
-                }
-            }
-
-            const result = await collection.updateOne(query, update)
-            res.send(result)
-        })
-
-        //get operations
-        app.get('/books', async ( req, res ) => {
-            const cursor = collection.find().sort({price: 1})
-            const result = await cursor.toArray()
-            res.send(result)
-        })
-
-        //get a single 
-        app.get('/books/:id', async (req,res) => {
-            const id = req.params.id
-            const query = {_id: new ObjectId(id)}
-            const result = await collection.findOne(query)
-            res.send(result)
-        })
-
-        await client.db("admin").command({ ping: 1 });
-         console.log("Pinged your deployment. You successfully connected to MongoDB!");
-    } 
-    finally {
-        //  await client.close();
+        //city
+        if(city){
+        query = {
+            $or: [
+                { title: { $regex: city, $options: 'i' } },
+                { "location.city": { $regex: city, $options: 'i' } },
+                { category: { $regex: city, $options: 'i' } }
+            ]
+        };
     }
+
+        //catagory
+        if(category){
+            query.category = category;
+        }
+        
+      const cursor = destinationsCollection.find(query);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
+    // 2. Add a new review
+    app.post('/reviews', async (req, res) => {
+      const review = req.body;
+      const result = await reviewsCollection.insertOne(review);
+      res.send(result);
+    });
+
+    console.log("Successfully connected to MongoDB!");
+  } finally {
+    //connection open
+  }
 }
+run().catch(console.dir);
 
-run().catch(console.dir)
+app.get('/', (req, res) => {
+  res.send('Travelee Server is running...');
+});
 
-app.listen(port, () =>{
-    console.log(`this server is running on ${port}`);
-})
-
-
- 
-
-// oDiHqEmt7A1Z8f0a
-// skeletonDB
+app.listen(port, () => {
+  console.log(`Server listening on port ${port}`);
+});
