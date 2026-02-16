@@ -28,6 +28,7 @@ async function run() {
     const destinationsCollection = database.collection("destinations");
     const reviewsCollection = database.collection("reviews");
     const usersCollection = database.collection("users");
+    const itinerariesCollection = database.collection("itineraries");
 
     // --- API ROUTES ---
 
@@ -46,7 +47,6 @@ async function run() {
             ]
         };
     }
-
         //catagory
         if(category){
             query.category = category;
@@ -56,6 +56,45 @@ async function run() {
       const result = await cursor.toArray();
       res.send(result);
     });
+
+    // 1. POST: Create a New Itinerary
+app.post('/itineraries', async (req, res) => {
+  try {
+    const itinerary = req.body;
+
+    // Production Step: Validation
+    if (!itinerary.userEmail || !itinerary.destination || !itinerary.startDate) {
+      return res.status(400).send({ error: "Missing required fields" });
+    }
+
+    // Add metadata
+    const newItinerary = {
+      ...itinerary,
+      createdAt: new Date(),
+      status: 'upcoming'
+    };
+
+    const result = await itinerariesCollection.insertOne(newItinerary);
+    res.status(201).send(result); // 201 means "Created"
+  } catch (error) {
+    console.error("Error creating itinerary:", error);
+    res.status(500).send({ error: "Failed to create itinerary" });
+  }
+});
+
+// 2. GET: Fetch Itineraries for a specific user
+app.get('/itineraries/:email', async (req, res) => {
+  try {
+    const email = req.params.email;
+    const query = { userEmail: email };
+    
+    // Sort by newest first
+    const result = await itinerariesCollection.find(query).sort({ createdAt: -1 }).toArray();
+    res.send(result);
+  } catch (error) {
+    res.status(500).send({ error: "Failed to fetch itineraries" });
+  }
+});
 
     // 2. Add a new review
     app.post('/reviews', async (req, res) => {
