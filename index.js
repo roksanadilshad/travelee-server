@@ -10,6 +10,9 @@ const reviewRoutes = require("./routes/reviewRoutes");
 const usersRoutes = require("./routes/userRoutes");
 const app = express();
 const port = process.env.PORT || 5000;
+const dns = require("node:dns/promises");
+dns.setServers(["1.1.1.1"]);
+ 
 
 app.use(cors());
 app.use(express.json());
