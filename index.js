@@ -10,15 +10,6 @@ const port = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-// MongoDB Connection
-const uri = process.env.MONGODB_URI; 
-const client = new MongoClient(uri, {
-  serverApi: {
-    version: ServerApiVersion.v1,
-    strict: true,
-    deprecationErrors: true,
-  }
-});
 
 async function run() {
   try {
@@ -58,29 +49,53 @@ async function run() {
     });
 
     // 1. POST: Create a New Itinerary
+// app.post('/itineraries', async (req, res) => {
+//   try {
+//     const itinerary = req.body;
+
+//     // Production Step: Validation
+//     if (!itinerary.userEmail || !itinerary.destination || !itinerary.startDate) {
+//       return res.status(400).send({ error: "Missing required fields" });
+//     }
+
+//     // Add metadata
+//     const newItinerary = {
+//       ...itinerary,
+//       createdAt: new Date(),
+//       status: 'upcoming'
+//     };
+
+//     const result = await itinerariesCollection.insertOne(newItinerary);
+//     res.status(201).send(result); 
+//   } catch (error) {
+//     console.error("Error creating itinerary:", error);
+//     res.status(500).send({ error: "Failed to create itinerary" });
+//   }
+// });
+
 app.post('/itineraries', async (req, res) => {
   try {
-    const itinerary = req.body;
+    const tripData = req.body;
 
-    // Production Step: Validation
-    if (!itinerary.userEmail || !itinerary.destination || !itinerary.startDate) {
-      return res.status(400).send({ error: "Missing required fields" });
+    // 1. Basic Validation
+    if (!tripData.destination || tripData.days.length === 0) {
+      return res.status(400).send({ message: "Trip must have a destination and at least one day." });
     }
 
-    // Add metadata
-    const newItinerary = {
-      ...itinerary,
-      createdAt: new Date(),
-      status: 'upcoming'
-    };
+    // 2. Insert into MongoDB
+    const result = await itinerariesCollection.insertOne({
+      ...tripData,
+      status: 'saved',
+      updatedAt: new Date()
+    });
 
-    const result = await itinerariesCollection.insertOne(newItinerary);
-    res.status(201).send(result); // 201 means "Created"
+    res.status(201).send({ success: true, insertedId: result.insertedId });
   } catch (error) {
-    console.error("Error creating itinerary:", error);
-    res.status(500).send({ error: "Failed to create itinerary" });
+    console.error("Database Error:", error);
+    res.status(500).send({ message: "Internal Server Error" });
   }
 });
+
 
 // 2. GET: Fetch Itineraries for a specific user
 app.get('/itineraries/:email', async (req, res) => {
