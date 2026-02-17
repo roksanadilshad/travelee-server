@@ -1,117 +1,29 @@
-const express = require('express');
-const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
-const cors = require('cors');
-require('dotenv').config();
+const express = require("express");
+const cors = require("cors");
+require("dotenv").config();
 
+const { connectDB } = require("./config/db");
+
+const destinationRoutes = require("./routes/destinationRoutes");
+const itineraryRoutes = require("./routes/itineraryRoutes");
+const reviewRoutes = require("./routes/reviewRoutes");
+const usersRoutes = require("./routes/userRoutes");
 const app = express();
 const port = process.env.PORT || 5000;
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 
-// MongoDB Connection
-const uri = process.env.MONGODB_URI; 
-const client = new MongoClient(uri, {
-  serverApi: {
-    version: ServerApiVersion.v1,
-    strict: true,
-    deprecationErrors: true,
-  }
-});
+connectDB();
 
-async function run() {
-  try {
-        await client.connect(); 
-    // Connect to the "traveleeDB" database
-    const database = client.db("traveleeDB");
-    const destinationsCollection = database.collection("destinations");
-    const reviewsCollection = database.collection("reviews");
-    const usersCollection = database.collection("users");
-    const itinerariesCollection = database.collection("itineraries");
+// Route setup
+app.use("/destinations", destinationRoutes);
+app.use("/itineraries", itineraryRoutes);
+app.use("/reviews", reviewRoutes);
+app.use("/user", usersRoutes);
 
-    // --- API ROUTES ---
-
-    // 1. Get all destinations (For Search/Filter)
-    app.get('/destinations', async (req, res) => {
-        const{city, category} = req.query;
-        let query = {};
-
-        //city
-        if(city){
-        query = {
-            $or: [
-                { title: { $regex: city, $options: 'i' } },
-                { "location.city": { $regex: city, $options: 'i' } },
-                { category: { $regex: city, $options: 'i' } }
-            ]
-        };
-    }
-        //catagory
-        if(category){
-            query.category = category;
-        }
-        
-      const cursor = destinationsCollection.find(query);
-      const result = await cursor.toArray();
-      res.send(result);
-    });
-
-    // 1. POST: Create a New Itinerary
-app.post('/itineraries', async (req, res) => {
-  try {
-    const itinerary = req.body;
-
-    // Production Step: Validation
-    if (!itinerary.userEmail || !itinerary.destination || !itinerary.startDate) {
-      return res.status(400).send({ error: "Missing required fields" });
-    }
-
-    // Add metadata
-    const newItinerary = {
-      ...itinerary,
-      createdAt: new Date(),
-      status: 'upcoming'
-    };
-
-    const result = await itinerariesCollection.insertOne(newItinerary);
-    res.status(201).send(result); // 201 means "Created"
-  } catch (error) {
-    console.error("Error creating itinerary:", error);
-    res.status(500).send({ error: "Failed to create itinerary" });
-  }
-});
-
-// 2. GET: Fetch Itineraries for a specific user
-app.get('/itineraries/:email', async (req, res) => {
-  try {
-    const email = req.params.email;
-    const query = { userEmail: email };
-    
-    // Sort by newest first
-    const result = await itinerariesCollection.find(query).sort({ createdAt: -1 }).toArray();
-    res.send(result);
-  } catch (error) {
-    res.status(500).send({ error: "Failed to fetch itineraries" });
-  }
-});
-
-    // 2. Add a new review
-    app.post('/reviews', async (req, res) => {
-      const review = req.body;
-      const result = await reviewsCollection.insertOne(review);
-      res.send(result);
-    });
-
-    console.log("Successfully connected to MongoDB!");
-  } finally {
-    //connection open
-  }
-}
-run().catch(console.dir);
-
-app.get('/', (req, res) => {
-  res.send('Travelee Server is running...');
+app.get("/", (req, res) => {
+  res.send("Travelee Server is running...");
 });
 
 app.listen(port, () => {
