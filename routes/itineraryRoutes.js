@@ -1,7 +1,10 @@
 const express = require('express');
-const router = express.Router();
-const { saveItinerary } = require('../controllers/itineraryController');
+const { createItinerary, getUserItineraries } = require('../controllers/itineraryController');
 
-router.post('/', saveItinerary);
+
+const router = express.Router();
+
+router.post('/', createItinerary);
+router.get('/', getUserItineraries);
 
 module.exports = router;
