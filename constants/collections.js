@@ -2,5 +2,6 @@ module.exports = {
   users: "users",
   reviews: "reviews",
   destinations: "destinations",
-  itineraries: "itineraries"
+  itineraries: "itineraries",
+   mytrips: "mytrips"
 };
