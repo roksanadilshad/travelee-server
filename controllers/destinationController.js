@@ -3,26 +3,37 @@ const { destinations } = require("../constants/collections");
 const { ObjectId } = require("mongodb");
 
 
-const getDestinations =async (req,res)=>{
-     const { city, category } = req.query;
-  let query = {};
+const getDestinations = async (req, res) => {
+  const { city, country, region } = req.query;
+  const db = getDB();
+
+  let filters = [];
 
   if (city) {
-    query.$and = [
-      { title: { $regex: city, $options: 'i' } },
-      { "location.city": { $regex: city, $options: 'i' } },
-      { category: { $regex: city, $options: 'i' } }
-    ];
+    filters.push({ city: { $regex: city, $options: "i" } });
   }
 
-  if (category) {
-    query.category = category;
+  if (country) {
+    filters.push({ country: { $regex: country, $options: "i" } });
   }
 
-  const db = getDB();
-  const result = await db.collection(destinations).find(query).toArray();
-  res.send(result);
-}
+  if (region) {
+    filters.push({ region: { $regex: region, $options: "i" } });
+  }
+
+  let query = {};
+  if (filters.length > 0) {
+    query = { $or: filters };
+  }
+
+  try {
+    const result = await db.collection(destinations).find(query).toArray();
+    res.send(result);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send({ error: "Server error" });
+  }
+};
 
 const getDestinationById = async (req, res) => {
   try {
