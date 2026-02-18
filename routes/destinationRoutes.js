@@ -1,17 +1,12 @@
-// const express = require('express');
-// const router = require('./itineraryRoutes');
-// const { getDestinations } = require('../controllers/destinationController');
-
-// router = express.Router()
-// router.get('/',getDestinations)
-
-// module.exports = router;
 
 const express = require('express');
-const { getDestinations } = require('../controllers/destinationController');
-
 const router = express.Router();
+const { getDestinations, getDestinationById } = require('../controllers/destinationController');
+
 
 router.get('/', getDestinations);
+
+
+router.get('/:id', getDestinationById);
 
 module.exports = router;
