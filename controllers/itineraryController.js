@@ -83,5 +83,24 @@ const deleteItinerary = async (req, res) => {
   }
 };
 
+//delete activity
+const deleteActivity = async (req, res) => {
+  const db = getDB()
+  const { itineraryId, activityId } = req.params;
 
-module.exports = { createItinerary, getUserItineraries , deleteItinerary};
+  const result = await db.collection("itineraries").updateOne(
+    { _id: new ObjectId(itineraryId) },
+    {
+      $pull: {
+        "days.$[].activities": {
+          id: Number(activityId), // string id
+        },
+      },
+    }
+  );
+
+  res.send({ success: true });
+};
+
+
+module.exports = { createItinerary, getUserItineraries , deleteItinerary, deleteActivity};
