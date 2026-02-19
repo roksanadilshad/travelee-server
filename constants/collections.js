@@ -3,5 +3,6 @@ module.exports = {
   reviews: "reviews",
   destinations: "destinations",
   itineraries: "itineraries",
-   mytrips: "mytrips"
+   mytrips: "mytrips",
+   tripreviews: "tripreviews"
 };
