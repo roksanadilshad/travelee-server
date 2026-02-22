@@ -127,14 +127,14 @@ const getRelatedDestinations = async (req, res) => {
   .find({
     _id: { $ne: main._id },
     $or: [
-      { country: main.country }, // same country
-      { region: main.region },   // same region
-      { best_time_to_visit: main.best_time_to_visit }, // same season
-      { avgBudget: main.avgBudget }, // similar budget
-      { duration: main.duration }, // similar trip length
+      { country: main.country }, 
+      { region: main.region },   
+      { best_time_to_visit: main.best_time_to_visit }, 
+      { avgBudget: main.avgBudget }, 
+      { duration: main.duration }, 
     ],
   })
-  .sort({ popularityScore: -1 }) // show popular first
+  .sort({ popularityScore: -1 }) 
   .limit(6)
   .toArray();
     res.send(related);
