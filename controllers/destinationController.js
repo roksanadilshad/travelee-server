@@ -3,26 +3,55 @@ const { destinations } = require("../constants/collections");
 const { ObjectId } = require("mongodb");
 
 const getDestinations = async (req, res) => {
-  const { city, country, region, page = 1, limit = 10 } = req.query;
+  const { city,
+    country,
+    region,
+    duration,
+    budget,
+    rating,
+    month,
+    page = 1,
+    limit = 10 } = req.query;
   const db = getDB();
 
   let filters = [];
 
   if (city) {
-    filters.push({ city: { $regex: city, $options: "i" } });
+    filters.push({
+      $or: [
+        { city: { $regex: city, $options: "i" } },
+        { country: { $regex: city, $options: "i" } },
+        { region: { $regex: city, $options: "i" } }
+      ]
+    });
   }
 
-  if (country) {
-    filters.push({ country: { $regex: country, $options: "i" } });
+  if (duration && duration !== "Any") {
+    filters.push({
+      duration: { $regex: duration, $options: "i" }
+    });
   }
 
-  if (region) {
-    filters.push({ region: { $regex: region, $options: "i" } });
+  // Price range
+  if (budget) {
+    filters.push({
+      price: { $regex: budget, $options: "i" }
+    });
+  }
+
+  if (rating) {
+    filters.push({ popularityScore: { $gte: Number(rating) } });
+  }
+
+  if (month && month !== "Any") {
+    filters.push({
+      best_time_to_visit: { $regex: month, $options: "i" }
+    });
   }
 
   let query = {};
   if (filters.length > 0) {
-    query = { $or: filters };
+    query = { $and: filters };
   }
 
   try {
