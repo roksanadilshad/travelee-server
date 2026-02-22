@@ -123,14 +123,20 @@ const getRelatedDestinations = async (req, res) => {
 
     // find related price
     const related = await db
-      .collection(destinations)
-      .find({
-        price: main.price,
-        _id: { $ne: main._id },
-      })
-      .limit(6)
-      .toArray();
-
+  .collection(destinations)
+  .find({
+    _id: { $ne: main._id },
+    $or: [
+      { country: main.country }, // same country
+      { region: main.region },   // same region
+      { best_time_to_visit: main.best_time_to_visit }, // same season
+      { avgBudget: main.avgBudget }, // similar budget
+      { duration: main.duration }, // similar trip length
+    ],
+  })
+  .sort({ popularityScore: -1 }) // show popular first
+  .limit(6)
+  .toArray();
     res.send(related);
   } catch (err) {
     console.error(err);
