@@ -9,10 +9,9 @@ const getUser= async(req,res)=>{
 
 const getSingleUser = async (req, res) => {
   try {
-      const { email } = req.query;
-      const db = getDB()
+    const { email } = req.query;
+    const db = getDB();
 
-    // validation
     if (!email) {
       return res.status(400).json({
         success: false,
@@ -22,30 +21,21 @@ const getSingleUser = async (req, res) => {
 
     const user = await db.collection("users").findOne({ email });
 
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
-    }
-
-
-    res.status(200).json({
+    
+    return res.status(200).json({
       success: true,
-      data: user,
+      data: user || null,
     });
 
   } catch (err) {
     console.error("Get User Error:", err);
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Internal server error",
     });
   }
-
 };
-
 const createNewUser = async (req, res) => {
       try {
     const { fullName, email, password, provider, image } = req.body;
@@ -117,5 +107,35 @@ if (provider === "Credential") {
     
 }
 
+const ForgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const db = getDB();
+     if (!email) {
+      return res.status(400).json({ success: false, message: "Email is required" });
+    }
 
-module.exports ={getUser, getSingleUser, createNewUser}
+    const user = await db.collection("users").findOne({ email });
+    
+     if (!user) {
+      return res.status(200).json({
+        success: true,
+        message: "If this email exists, a reset link has been sent",
+      });
+    }
+    
+  } catch (error) {
+    console.error("Forgot Password Error:", error);
+    return new Response(
+      JSON.stringify({
+        success: false,
+        message: "Internal Server Error",
+      }),
+      { status: 500 }
+    );
+  }
+  
+}
+
+
+module.exports ={getUser, getSingleUser, createNewUser, ForgotPassword}
