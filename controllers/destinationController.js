@@ -65,7 +65,6 @@ const getDestinationById = async (req, res) => {
     if (!destination) {
       return res.status(404).send({ error: "Destination not found" });
     }
-
     res.send(destination);
   } catch (err) {
     console.error(err);
@@ -73,4 +72,41 @@ const getDestinationById = async (req, res) => {
   }
 };
 
-module.exports = { getDestinations, getDestinationById };
+//  ADD RELATED DESTINATIONS --->>
+
+const getRelatedDestinations = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!ObjectId.isValid(id)) {
+      return res.status(400).send({ error: "Invalid ID" });
+    }
+
+    const db = getDB();
+
+    const main = await db
+      .collection(destinations)
+      .findOne({ _id: new ObjectId(id) });
+
+    if (!main) {
+      return res.status(404).send({ error: "Destination not found" });
+    }
+
+    // find related price
+    const related = await db
+      .collection(destinations)
+      .find({
+        price: main.price,
+        _id: { $ne: main._id },
+      })
+      .limit(6)
+      .toArray();
+
+    res.send(related);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send({ error: "Server error" });
+  }
+};
+
+module.exports = { getDestinations, getDestinationById,getRelatedDestinations };
