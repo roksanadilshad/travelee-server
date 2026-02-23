@@ -6,15 +6,17 @@ const createItinerary = async (req, res) => {
   try {
     const db = getDB();
     const tripData = req.body;
+    // console.log(tripData)
 
     // 1. Basic Validation
-    if (!tripData.destination || tripData.days.length === 0) {
-      return res.status(400).send({ message: "Trip must have a destination and at least one day." });
-    }
+    
+    // if (!tripData.destination || tripData.days.length === 0) {
+    //   return res.status(400).send({ message: "Trip must have a destination and at least one day." });
+    // }
 
     // 2. Insert into MongoDB
     const result = await db
-      .collection("itineraries").insertOne({
+      .collection(itineraries).insertOne({
       ...tripData,
       status: 'saved',
       updatedAt: new Date()
