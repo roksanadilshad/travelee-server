@@ -16,7 +16,7 @@ const getDestinations = async (req, res) => {
     sort
   } = req.query;
 
-  const db = getDB();
+  const db = await connectDB()
 
   let filters = [];
 
@@ -109,7 +109,7 @@ const getDestinationById = async (req, res) => {
       return res.status(400).send({ error: "Invalid ID" });
     }
 
-    const db = getDB();
+    const db = await connectDB();;
     const destination = await db
       .collection(destinations)
       .findOne({ _id: new ObjectId(id) });
@@ -134,7 +134,7 @@ const getRelatedDestinations = async (req, res) => {
       return res.status(400).send({ error: "Invalid ID" });
     }
 
-    const db = getDB();
+    const db = await connectDB();
 
     const main = await db
       .collection(destinations)
@@ -169,8 +169,8 @@ const getRelatedDestinations = async (req, res) => {
 
 const getTrendingDestinations = async (req, res) => {
   try {
-    const db = getDB();
-
+    const db = await connectDB();
+    
     // Primary query: look for flagged trending items
     let data = await db
       .collection(destinations)

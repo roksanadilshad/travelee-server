@@ -1,10 +1,10 @@
-const {getDB} =require('../config/db');
+const {getDB, connectDB} =require('../config/db');
 const { ObjectId } = require("mongodb");
 const { itineraries } = require('../constants/collections');
 
 const createItinerary = async (req, res) => {
   try {
-    const db = getDB();
+    const db = await connectDB();
     const tripData = req.body;
     // console.log(tripData)
 
@@ -32,7 +32,7 @@ const createItinerary = async (req, res) => {
 const getUserItineraries = async (req, res) => {
   try {
     const email = req.params.email;
-    const db = getDB();
+    const db = await connectDB();
 
     const result = await db
       .collection("itineraries")
@@ -49,7 +49,7 @@ const getUserItineraries = async (req, res) => {
 
 const deleteItinerary = async (req, res) => {
   try {
-    const db = getDB();
+    const db = await connectDB();
     const { id } = req.params;
 
     // Validate ID
@@ -87,7 +87,7 @@ const deleteItinerary = async (req, res) => {
 
 //delete activity
 const deleteActivity = async (req, res) => {
-  const db = getDB()
+  const db = await connectDB();
   const { itineraryId, activityId } = req.params;
 
   const result = await db.collection("itineraries").updateOne(

@@ -5,7 +5,7 @@ const { ObjectId } = require("mongodb");
 // GET My Trips by userEmail
 const getMyTrips = async (req, res) => {
   try {
-    const db = getDB();
+    const db = await connectDB();
     const { userEmail } = req.query;
 
     if (!userEmail) {
@@ -42,7 +42,7 @@ const getMyTrips = async (req, res) => {
 // ADD to My Trips
 const addToMyTrips = async (req, res) => {
   try {
-    const db = getDB();
+    const db = await connectDB();
     const tripData = req.body;
 
     if (!tripData.userEmail) {
@@ -73,7 +73,7 @@ const addToMyTrips = async (req, res) => {
 // DELETE My Trip
 const deleteMyTrip = async (req, res) => {
   try {
-    const db = getDB();
+    const db = await connectDB();
     const { id } = req.params;
 
     const result = await db.collection(mytrips).deleteOne({
