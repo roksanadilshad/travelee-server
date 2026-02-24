@@ -12,14 +12,15 @@ const myTripsRoutes = require("./routes/myTripsRoutes");
 const tripreviewRoutes = require("./routes/tripreviewRoutes");
 const app = express();
 const port = process.env.PORT || 5000;
-const dns = require("node:dns/promises");
-dns.setServers(["1.1.1.1"]);
+const dns = require("node:dns/promises").setServers(["1.1.1.1", "8.8.8.8"]);
  
 
 app.use(cors());
 app.use(express.json());
 
-connectDB();
+connectDB().then(() => {
+  console.log("Database ready");
+});
 
 // Route setup
 app.use("/destinations", destinationRoutes);
@@ -33,6 +34,7 @@ app.get("/", (req, res) => {
   res.send("Travelee Server is running...");
 });
 
-app.listen(port, () => {
-  console.log(`Server listening on port ${port}`);
-});
+// app.listen(port, () => {
+//   console.log(`Server listening on port ${port}`);
+// });
+module.exports = app;

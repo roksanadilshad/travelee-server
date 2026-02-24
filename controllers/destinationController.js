@@ -1,4 +1,4 @@
-const { getDB } = require("../config/db");
+const { getDB, connectDB } = require("../config/db");
 const { destinations } = require("../constants/collections");
 const { ObjectId } = require("mongodb");
 
@@ -12,7 +12,7 @@ const getDestinations = async (req, res) => {
     month,
     page = 1,
     limit = 10 } = req.query;
-  const db = getDB();
+  const db = await connectDB();
 
   let filters = [];
 
@@ -127,14 +127,14 @@ const getRelatedDestinations = async (req, res) => {
   .find({
     _id: { $ne: main._id },
     $or: [
-      { country: main.country }, // same country
-      { region: main.region },   // same region
-      { best_time_to_visit: main.best_time_to_visit }, // same season
-      { avgBudget: main.avgBudget }, // similar budget
-      { duration: main.duration }, // similar trip length
+      { country: main.country }, 
+      { region: main.region },   
+      { best_time_to_visit: main.best_time_to_visit }, 
+      { avgBudget: main.avgBudget }, 
+      { duration: main.duration }, 
     ],
   })
-  .sort({ popularityScore: -1 }) // show popular first
+  .sort({ popularityScore: -1 }) 
   .limit(6)
   .toArray();
     res.send(related);
@@ -144,4 +144,34 @@ const getRelatedDestinations = async (req, res) => {
   }
 };
 
-module.exports = { getDestinations, getDestinationById,getRelatedDestinations };
+const getTrendingDestinations = async (req, res) => {
+  try {
+    const db = getDB();
+    
+    // Primary query: look for flagged trending items
+    let data = await db
+      .collection(destinations)
+      .find({ isTrending: true })
+      .sort({ popularityScore: -1 })
+      .limit(8)
+      .toArray();
+
+    // Fallback: If no one flagged "isTrending", show top popularity items
+    if (data.length === 0) {
+      data = await db
+        .collection(destinations)
+        .find({})
+        .sort({ popularityScore: -1 })
+        .limit(8)
+        .toArray();
+    }
+
+    res.send(data);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send({ error: "Server error" });
+  }
+};
+
+
+module.exports = { getTrendingDestinations, getDestinations, getDestinationById,getRelatedDestinations };
