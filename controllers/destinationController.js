@@ -144,4 +144,34 @@ const getRelatedDestinations = async (req, res) => {
   }
 };
 
-module.exports = { getDestinations, getDestinationById,getRelatedDestinations };
+const getTrendingDestinations = async (req, res) => {
+  try {
+    const db = getDB();
+    
+    // Primary query: look for flagged trending items
+    let data = await db
+      .collection(destinations)
+      .find({ isTrending: true })
+      .sort({ popularityScore: -1 })
+      .limit(8)
+      .toArray();
+
+    // Fallback: If no one flagged "isTrending", show top popularity items
+    if (data.length === 0) {
+      data = await db
+        .collection(destinations)
+        .find({})
+        .sort({ popularityScore: -1 })
+        .limit(8)
+        .toArray();
+    }
+
+    res.send(data);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send({ error: "Server error" });
+  }
+};
+
+
+module.exports = { getTrendingDestinations, getDestinations, getDestinationById,getRelatedDestinations };
