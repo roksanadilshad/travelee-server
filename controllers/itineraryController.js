@@ -1,10 +1,10 @@
-const {getDB} =require('../config/db');
+const {getDB, connectDB} =require('../config/db');
 const { ObjectId } = require("mongodb");
 const { itineraries } = require('../constants/collections');
 
 const createItinerary = async (req, res) => {
   try {
-    const db = getDB();
+    const db = await connectDB();
     const tripData = req.body;
     // console.log(tripData)
 
@@ -15,12 +15,12 @@ const createItinerary = async (req, res) => {
     // }
 
     // 2. Insert into MongoDB
-    const result = await db
-      .collection(itineraries).insertOne({
-      ...tripData,
-      status: 'saved',
-      updatedAt: new Date()
-    });
+    const result = await db.collection(itineraries).insertOne({
+  ...tripData,
+  status: 'saved',
+  createdAt: new Date(),
+  updatedAt: new Date()
+});
 
     res.status(201).send({ success: true, insertedId: result.insertedId });
   } catch (error) {
@@ -32,7 +32,7 @@ const createItinerary = async (req, res) => {
 const getUserItineraries = async (req, res) => {
   try {
     const email = req.params.email;
-    const db = getDB();
+    const db = await connectDB();
 
     const result = await db
       .collection("itineraries")
@@ -49,7 +49,7 @@ const getUserItineraries = async (req, res) => {
 
 const deleteItinerary = async (req, res) => {
   try {
-    const db = getDB();
+    const db = await connectDB();
     const { id } = req.params;
 
     // Validate ID
@@ -87,21 +87,30 @@ const deleteItinerary = async (req, res) => {
 
 //delete activity
 const deleteActivity = async (req, res) => {
-  const db = getDB()
-  const { itineraryId, activityId } = req.params;
+  try {
+    const db = await connectDB();
+    const { itineraryId, activityId } = req.params;
 
-  const result = await db.collection("itineraries").updateOne(
-    { _id: new ObjectId(itineraryId) },
-    {
-      $pull: {
-        "days.$[].activities": {
-          id: Number(activityId), // string id
-        },
-      },
+    if (!ObjectId.isValid(itineraryId)) {
+      return res.status(400).send({ success: false, message: "Invalid ID" });
     }
-  );
 
-  res.send({ success: true });
+    const result = await db.collection("itineraries").updateOne(
+      { _id: new ObjectId(itineraryId) },
+      {
+        $pull: {
+          "days.$[].activities": {
+            id: Number(activityId),
+          },
+        },
+      }
+    );
+
+    res.send({ success: true });
+  } catch (error) {
+    console.error("Delete Activity Error:", error);
+    res.status(500).send({ success: false, message: "Internal Server Error" });
+  }
 };
 
 

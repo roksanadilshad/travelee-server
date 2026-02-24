@@ -1,4 +1,4 @@
-const { getDB } = require("../config/db");
+const { getDB, connectDB } = require("../config/db");
 const { tripreviews } = require("../constants/collections");
 const { ObjectId } = require("mongodb");
 
@@ -34,7 +34,7 @@ const addTripReview = async (req, res) => {
       verified: true,
     };
 
-    const db = getDB();
+    const db = await connectDB();
     const result = await db.collection(tripreviews).insertOne(reviewDoc);
 
     res.status(201).json({
@@ -50,7 +50,7 @@ const addTripReview = async (req, res) => {
 //  GET Trip Reviews 
 const getTripReviews = async (req, res) => {
   try {
-    const db = getDB();
+    const db = await connectDB();
     const { tripId } = req.query;
 
     const query = tripId && ObjectId.isValid(tripId)

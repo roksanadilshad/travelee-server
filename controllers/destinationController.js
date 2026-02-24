@@ -2,6 +2,7 @@ const { getDB, connectDB } = require("../config/db");
 const { destinations } = require("../constants/collections");
 const { ObjectId } = require("mongodb");
 
+
 const getDestinations = async (req, res) => {
   const { city,
     country,
@@ -11,8 +12,11 @@ const getDestinations = async (req, res) => {
     rating,
     month,
     page = 1,
-    limit = 10 } = req.query;
-  const db = await connectDB();
+    limit = 10,
+    sort
+  } = req.query;
+
+  const db = await connectDB()
 
   let filters = [];
 
@@ -32,7 +36,6 @@ const getDestinations = async (req, res) => {
     });
   }
 
-  // Price range
   if (budget) {
     filters.push({
       price: { $regex: budget, $options: "i" }
@@ -55,17 +58,36 @@ const getDestinations = async (req, res) => {
   }
 
   try {
-    //  Pagination calculation
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const lim = parseInt(limit);
-    const totalCount = await db.collection(destinations).countDocuments(query);
+
+    const totalCount = await db.collection("destinations").countDocuments(query);
     const totalPages = Math.ceil(totalCount / lim);
-    const data = await db
-      .collection(destinations)
+
+    let data = await db
+      .collection("destinations")
       .find(query)
       .skip(skip)
       .limit(lim)
       .toArray();
+
+    //(Price Sorting)
+    if (sort === "priceLow" || sort === "priceHigh") {
+      data.sort((a, b) => {
+
+        const cleanA = a.price?.replace(/[^0-9-]/g, "") || "";
+        const cleanB = b.price?.replace(/[^0-9-]/g, "") || "";
+
+        const minA = Number(cleanA.split("-")[0]);
+        const minB = Number(cleanB.split("-")[0]);
+
+        if (sort === "priceLow") {
+          return minA - minB;
+        } else {
+          return minB - minA;
+        }
+      });
+    }
 
     res.send({
       data,
@@ -79,6 +101,7 @@ const getDestinations = async (req, res) => {
   }
 };
 
+
 const getDestinationById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -86,7 +109,7 @@ const getDestinationById = async (req, res) => {
       return res.status(400).send({ error: "Invalid ID" });
     }
 
-    const db = getDB();
+    const db = await connectDB();;
     const destination = await db
       .collection(destinations)
       .findOne({ _id: new ObjectId(id) });
@@ -111,7 +134,7 @@ const getRelatedDestinations = async (req, res) => {
       return res.status(400).send({ error: "Invalid ID" });
     }
 
-    const db = getDB();
+    const db = await connectDB();
 
     const main = await db
       .collection(destinations)
@@ -123,20 +146,20 @@ const getRelatedDestinations = async (req, res) => {
 
     // find related price
     const related = await db
-  .collection(destinations)
-  .find({
-    _id: { $ne: main._id },
-    $or: [
-      { country: main.country }, 
-      { region: main.region },   
-      { best_time_to_visit: main.best_time_to_visit }, 
-      { avgBudget: main.avgBudget }, 
-      { duration: main.duration }, 
-    ],
-  })
-  .sort({ popularityScore: -1 }) 
-  .limit(6)
-  .toArray();
+      .collection(destinations)
+      .find({
+        _id: { $ne: main._id },
+        $or: [
+          { country: main.country },
+          { region: main.region },
+          { best_time_to_visit: main.best_time_to_visit },
+          { avgBudget: main.avgBudget },
+          { duration: main.duration },
+        ],
+      })
+      .sort({ popularityScore: -1 })
+      .limit(6)
+      .toArray();
     res.send(related);
   } catch (err) {
     console.error(err);
@@ -146,7 +169,7 @@ const getRelatedDestinations = async (req, res) => {
 
 const getTrendingDestinations = async (req, res) => {
   try {
-    const db = getDB();
+    const db = await connectDB();
     
     // Primary query: look for flagged trending items
     let data = await db
@@ -174,4 +197,4 @@ const getTrendingDestinations = async (req, res) => {
 };
 
 
-module.exports = { getTrendingDestinations, getDestinations, getDestinationById,getRelatedDestinations };
+module.exports = { getTrendingDestinations, getDestinations, getDestinationById, getRelatedDestinations };
