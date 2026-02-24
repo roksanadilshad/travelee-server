@@ -1,4 +1,4 @@
-const { getDB } = require("../config/db");
+const { getDB, connectDB } = require("../config/db");
 const { destinations } = require("../constants/collections");
 const { ObjectId } = require("mongodb");
 
@@ -12,7 +12,7 @@ const getDestinations = async (req, res) => {
     month,
     page = 1,
     limit = 10 } = req.query;
-  const db = getDB();
+  const db = await connectDB();
 
   let filters = [];
 
