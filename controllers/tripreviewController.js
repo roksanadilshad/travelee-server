@@ -5,25 +5,25 @@ const { ObjectId } = require("mongodb");
 //  ADD Trip Review  
 const addTripReview = async (req, res) => {
   try {
-    const { userId, userName, userAvatar, destination_id, rating, comment, images } = req.body;
+    const { userEmail, userName, userAvatar, destination_id, rating, comment, images } = req.body;
 
-    if (!userId || !userName || !destination_id || !rating || !comment) {
-      return res.status(400).json({ message: "Missing required fields" });
-    }
+if (!userEmail || !userName || !destination_id || !rating || !comment) {
+  return res.status(400).json({ message: "Missing required fields" });
+}
 
-    const reviewDoc = {
-      user: {
-        id: userId,
-        name: userName,
-        avatar: userAvatar || "",
-      },
-      destination_id,      
-      rating,
-      comment,
-      images: images || [],
-      createdAt: new Date(),
-      verified: true,
-    };
+const reviewDoc = {
+  user: {
+    email: userEmail,
+    name: userName,
+    avatar: userAvatar || "",
+  },
+  destination_id,
+  rating,
+  comment,
+  images: images || [],
+  createdAt: new Date(),
+  verified: true,
+};
 
     const db = getDB();
     const result = await db.collection(tripreviews).insertOne(reviewDoc);
@@ -34,17 +34,16 @@ const addTripReview = async (req, res) => {
     res.status(500).json({ message: "Failed to add trip review" });
   }
 };
-//  GET Trip Reviews 
+// GET Trip Reviews (by destination_id)
 const getTripReviews = async (req, res) => {
   try {
     const db = getDB();
-    const { tripId } = req.query;
+    const { destination_id } = req.query;
 
-    const query = tripId && ObjectId.isValid(tripId)
-      ? { tripId: new ObjectId(tripId) }
-      : {};
+    const query = destination_id ? { destination_id } : {};
 
-    const reviews = await db.collection(tripreviews)
+    const reviews = await db
+      .collection(tripreviews)
       .find(query)
       .sort({ createdAt: -1 })
       .toArray();
