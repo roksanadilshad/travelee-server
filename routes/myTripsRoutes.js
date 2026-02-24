@@ -10,6 +10,6 @@ router.get("/", getMyTrips);
 router.delete("/:id", deleteMyTrip);
 
 
-router.put("/", addToMyTrips);
+router.post("/", addToMyTrips);
 
 module.exports = router;
