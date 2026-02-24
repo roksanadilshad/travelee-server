@@ -5,19 +5,10 @@ const { ObjectId } = require("mongodb");
 //  ADD Trip Review  
 const addTripReview = async (req, res) => {
   try {
-    const { userId, userName, userAvatar, tripId, rating, comment, images } = req.body;
+    const { userId, userName, userAvatar, destination_id, rating, comment, images } = req.body;
 
-    // Validate required fields
-    if (!userId || !userName || !tripId || !rating || !comment) {
+    if (!userId || !userName || !destination_id || !rating || !comment) {
       return res.status(400).json({ message: "Missing required fields" });
-    }
-
-    // ObjectId validation
-    if (!ObjectId.isValid(tripId)) {
-      return res.status(400).json({ message: "Invalid tripId" });
-    }
-    if (!ObjectId.isValid(userId)) {
-      return res.status(400).json({ message: "Invalid userId" });
     }
 
     const reviewDoc = {
@@ -26,7 +17,7 @@ const addTripReview = async (req, res) => {
         name: userName,
         avatar: userAvatar || "",
       },
-      tripId: new ObjectId(tripId),
+      destination_id,      
       rating,
       comment,
       images: images || [],
@@ -37,16 +28,12 @@ const addTripReview = async (req, res) => {
     const db = getDB();
     const result = await db.collection(tripreviews).insertOne(reviewDoc);
 
-    res.status(201).json({
-      message: "Trip review added successfully",
-      insertedId: result.insertedId,
-    });
+    res.status(201).json({ message: "Trip review added successfully" });
   } catch (error) {
     console.error("Error adding trip review:", error);
     res.status(500).json({ message: "Failed to add trip review" });
   }
 };
-
 //  GET Trip Reviews 
 const getTripReviews = async (req, res) => {
   try {

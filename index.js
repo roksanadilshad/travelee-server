@@ -19,7 +19,9 @@ dns.setServers(["1.1.1.1"]);
 app.use(cors());
 app.use(express.json());
 
-connectDB();
+connectDB().then(() => {
+  console.log("Database ready");
+});
 
 // Route setup
 app.use("/destinations", destinationRoutes);
