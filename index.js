@@ -15,7 +15,10 @@ const port = process.env.PORT || 5000;
 const dns = require("node:dns/promises").setServers(["1.1.1.1", "8.8.8.8"]);
  
 
-app.use(cors());
+app.use(cors({
+   origin: process.env.CLIENT_URL,
+    credentials: true
+}));
 app.use(express.json());
 
 connectDB().then(() => {
