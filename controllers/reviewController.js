@@ -4,7 +4,7 @@ const collections = require('../constants/collections');
 
 const getReviews = async (req, res) => {
   try {
-    const db = getDB();
+    const db = await connectDB();
     // Use the constant here
     const reviews = await db.collection(collections.tripreviews)
       .find()
@@ -19,7 +19,7 @@ const getReviews = async (req, res) => {
 const addReview = async (req, res) => {
   try {
     const review = req.body;
-    const db = getDB();
+    const db = await connectDB();
     const result = await db.collection(collections.tripreviews).insertOne(review);
     res.status(201).send(result);
   } catch (error) {

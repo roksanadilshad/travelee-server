@@ -2,7 +2,12 @@ const { MongoClient, ServerApiVersion } = require("mongodb");
 
 const uri = process.env.MONGODB_URI;
 
+if (!uri) {
+  throw new Error("MONGODB_URI is missing in environment variables");
+}
+
 const client = new MongoClient(uri, {
+  maxPoolSize: 10,
   serverApi: {
     version: ServerApiVersion.v1,
     strict: true,
@@ -10,17 +15,21 @@ const client = new MongoClient(uri, {
   },
 });
 
-let database;
+let cachedDb = null;
 
 const connectDB = async () => {
-  if (!database) {
-    await client.connect();
-    database = client.db("traveleeDB");
+  if (cachedDb) return cachedDb;
+
+  try {
+    const connection = await client.connect();
+    cachedDb = connection.db("traveleeDB");
+
     console.log("MongoDB Connected");
+    return cachedDb;
+  } catch (error) {
+    console.error("MongoDB Connection Error:", error);
+    throw error;
   }
-  return database;
 };
 
-const getDB = () => database;
-
-module.exports = { connectDB, getDB };
+module.exports = { connectDB };

@@ -2,7 +2,7 @@ const { getDB } = require("../config/db");
 const bcrypt = require("bcrypt");
 
 const getUser= async(req,res)=>{
-    const db = getDB()
+    const db = await connectDB();
     const result = await db.collection("users").find().toArray();
     res.send(result)
 }
@@ -10,7 +10,7 @@ const getUser= async(req,res)=>{
 const getSingleUser = async (req, res) => {
   try {
     const { email } = req.query;
-    const db = getDB();
+    const db = await connectDB();
 
     if (!email) {
       return res.status(400).json({
@@ -39,7 +39,7 @@ const getSingleUser = async (req, res) => {
 const createNewUser = async (req, res) => {
       try {
     const { fullName, email, password, provider, image } = req.body;
-         const db = getDB()
+         const db = await connectDB();
         //  Basic Validation
       
     if (!fullName || !email || !provider) {
@@ -110,7 +110,7 @@ if (provider === "Credential") {
 const ForgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
-    const db = getDB();
+    const db = await connectDB();
      if (!email) {
       return res.status(400).json({ success: false, message: "Email is required" });
     }

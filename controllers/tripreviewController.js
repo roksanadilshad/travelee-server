@@ -25,7 +25,7 @@ const addTripReview = async (req, res) => {
       verified: true,
     };
 
-    const db = getDB();
+    const db = await connectDB();
     const result = await db.collection(tripreviews).insertOne(reviewDoc);
 
     res.status(201).json({ message: "Trip review added successfully" });
@@ -37,7 +37,7 @@ const addTripReview = async (req, res) => {
 //  GET Trip Reviews 
 const getTripReviews = async (req, res) => {
   try {
-    const db = getDB();
+    const db = await connectDB();
     const { tripId } = req.query;
 
     const query = tripId && ObjectId.isValid(tripId)
