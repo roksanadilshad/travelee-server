@@ -1,4 +1,4 @@
-const { getDB } = require("../config/db");
+const { getDB, connectDB } = require("../config/db");
 const { destinations } = require("../constants/collections");
 const { ObjectId } = require("mongodb");
 
