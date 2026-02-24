@@ -123,14 +123,20 @@ const getRelatedDestinations = async (req, res) => {
 
     // find related price
     const related = await db
-      .collection(destinations)
-      .find({
-        price: main.price,
-        _id: { $ne: main._id },
-      })
-      .limit(6)
-      .toArray();
-
+  .collection(destinations)
+  .find({
+    _id: { $ne: main._id },
+    $or: [
+      { country: main.country }, 
+      { region: main.region },   
+      { best_time_to_visit: main.best_time_to_visit }, 
+      { avgBudget: main.avgBudget }, 
+      { duration: main.duration }, 
+    ],
+  })
+  .sort({ popularityScore: -1 }) 
+  .limit(6)
+  .toArray();
     res.send(related);
   } catch (err) {
     console.error(err);
@@ -138,4 +144,34 @@ const getRelatedDestinations = async (req, res) => {
   }
 };
 
-module.exports = { getDestinations, getDestinationById,getRelatedDestinations };
+const getTrendingDestinations = async (req, res) => {
+  try {
+    const db = getDB();
+    
+    // Primary query: look for flagged trending items
+    let data = await db
+      .collection(destinations)
+      .find({ isTrending: true })
+      .sort({ popularityScore: -1 })
+      .limit(8)
+      .toArray();
+
+    // Fallback: If no one flagged "isTrending", show top popularity items
+    if (data.length === 0) {
+      data = await db
+        .collection(destinations)
+        .find({})
+        .sort({ popularityScore: -1 })
+        .limit(8)
+        .toArray();
+    }
+
+    res.send(data);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send({ error: "Server error" });
+  }
+};
+
+
+module.exports = { getTrendingDestinations, getDestinations, getDestinationById,getRelatedDestinations };
