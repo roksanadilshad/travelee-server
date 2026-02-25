@@ -21,10 +21,10 @@ const allowedOrigins = [
   "http://localhost:5173"               // Vite Dev (if using Vite)
 ];
 
-app.use(cors({
-   origin: process.env.CLIENT_URL,
-    credentials: true
-}));
+// app.use(cors({
+//    origin: process.env.CLIENT_URL,
+//     credentials: true
+// }));
 app.use(cors({
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl)
