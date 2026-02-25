@@ -1,5 +1,16 @@
-const { getDB } = require("../config/db");
+const { getDB, connectDB } = require("../config/db");
 const bcrypt = require("bcrypt");
+const crypto = require("crypto");
+
+const nodemailer = require("nodemailer");
+
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.MAIL_USER,
+    pass: process.env.MAIL_PASS,
+  },
+});
 
 const getUser= async(req,res)=>{
     const db = await connectDB();
@@ -116,26 +127,76 @@ const ForgotPassword = async (req, res) => {
     }
 
     const user = await db.collection("users").findOne({ email });
-    
-     if (!user) {
+    if (!user) {
       return res.status(200).json({
         success: true,
-        message: "If this email exists, a reset link has been sent",
+        message: "If this email exists, a reset link has been sent. please check your email!",
       });
     }
-    
-  } catch (error) {
-    console.error("Forgot Password Error:", error);
-    return new Response(
-      JSON.stringify({
-        success: false,
-        message: "Internal Server Error",
-      }),
-      { status: 500 }
+
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    const resetTokenHash = crypto.createHash("sha256").update(resetToken).digest("hex");
+    const resetTokenExpires = new Date(Date.now() + 1000 * 60 * 15);
+
+    await db.collection("users").updateOne(
+      { _id: user._id },
+      { $set: { resetPasswordToken: resetTokenHash, resetPasswordExpires: resetTokenExpires } }
     );
+
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+
+    await transporter.sendMail({
+      from: `"Travelee" <${process.env.MAIL_USER}>`,
+      to: email,
+      subject: "Reset your password",
+      html: `<p>Click this link to reset your password:</p><a href="${resetUrl}">${resetUrl}</a>`,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "If this email exists, a reset link has been sent",
+      url: resetUrl,
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: "Internal Server Error" });
   }
-  
-}
+};
 
+// controllers/userController.js
+const ResetPassword = async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+    const db = connectDB();
 
-module.exports ={getUser, getSingleUser, createNewUser, ForgotPassword}
+    if (!token || !newPassword) {
+      return res.status(400).json({ success: false, message: "Token and password are required" });
+    }
+
+    const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+
+    const user = await db.collection("users").findOne({
+      resetPasswordToken: tokenHash,
+      resetPasswordExpires: { $gt: new Date() },
+    });
+
+    if (!user) {
+      return res.status(400).json({ success: false, message: "Invalid or expired token" });
+    }
+
+    const hashed = await bcrypt.hash(newPassword, 10);
+
+    await db.collection("users").updateOne(
+      { _id: user._id },
+      {
+        $set: { password: hashed },
+        $unset: { resetPasswordToken: "", resetPasswordExpires: "" },
+      }
+    );
+
+    return res.status(200).json({ success: true, message: "Password reset successful" });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};
+
+module.exports ={getUser, getSingleUser, createNewUser, ForgotPassword, ResetPassword}

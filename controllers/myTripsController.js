@@ -1,34 +1,26 @@
-const { getDB } = require("../config/db");
+const { getDB, connectDB } = require("../config/db");
 const { mytrips } = require("../constants/collections");
 const { ObjectId } = require("mongodb");
 
-// GET My Trips by userEmail
+// GET My Trips (optionally by user)
 const getMyTrips = async (req, res) => {
   try {
     const db = await connectDB();
     const { userEmail } = req.query;
 
-    if (!userEmail) {
-      return res.status(400).json({ message: "userEmail is required" });
-    }
+    const query = userId ? { userId } : {};
 
-    const trips = await db
-      .collection(mytrips)
-      .find({ userEmail })
-      .toArray();
+    const trips = await db.collection(mytrips).find(query).toArray();
 
     const formattedTrips = trips.map((trip) => ({
       _id: trip._id,
-      destination_id: trip.destination_id,
-      country: trip.country,
+      tripName: trip.tripName,
+      destination: trip.destination,
+      durationDays: trip.durationDays,
       startDate: trip.startDate,
       endDate: trip.endDate,
-      duration: trip.duration,
-      city: trip.city,
-      region: trip.region,
-      image: trip.media?.cover_image || "",
-      userEmail: trip.userEmail,
-      userName: trip.userName,
+      activities: trip.activities,
+      image: trip.image,
       createdAt: trip.createdAt,
     }));
 
@@ -91,4 +83,4 @@ const deleteMyTrip = async (req, res) => {
   }
 };
 
-module.exports = { getMyTrips, deleteMyTrip, addToMyTrips };
+module.exports = { getMyTrips, deleteMyTrip };
