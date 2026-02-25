@@ -1,6 +1,7 @@
 const Joi = require('joi');
 
 const activitySchema = Joi.object({
+  id: Joi.number().optional(), 
   task: Joi.string().required(),
   time: Joi.string().required(),
   // startDate: Joi.string().required(),

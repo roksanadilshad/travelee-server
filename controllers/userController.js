@@ -50,6 +50,7 @@ const getSingleUser = async (req, res) => {
 const createNewUser = async (req, res) => {
       try {
     const { fullName, email, password, provider, image } = req.body;
+
          const db = await connectDB();
         //  Basic Validation
       
@@ -95,10 +96,13 @@ if (provider === "Credential") {
       provider,
       password: userPassword,
       createdAt: new Date(),
-    };
+        };
+        
+        
 
     // Insert into DB
-    const result = await db.collection("users").insertOne(newUser);
+        const result = await db.collection("users").insertOne(newUser);
+        console.log("newUser :",result);
 
      res.status(201).json({
       success: true,
@@ -120,6 +124,8 @@ const ForgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
     const db = await connectDB();
+
+    
      if (!email) {
       return res.status(400).json({ success: false, message: "Email is required" });
     }
