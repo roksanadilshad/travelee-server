@@ -53,11 +53,10 @@ const getTripReviews = async (req, res) => {
     const db = await connectDB();
     const { tripId } = req.query;
 
-    const query = tripId && ObjectId.isValid(tripId)
-      ? { tripId: new ObjectId(tripId) }
-      : {};
+    const query = destination_id ? { destination_id } : {};
 
-    const reviews = await db.collection(tripreviews)
+    const reviews = await db
+      .collection(tripreviews)
       .find(query)
       .sort({ createdAt: -1 })
       .toArray();
