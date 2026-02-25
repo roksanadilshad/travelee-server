@@ -6,7 +6,7 @@ const { ObjectId } = require("mongodb");
 const addTripReview = async (req, res) => {
   try {
     
-    const { userEmail, userName, userAvatar, destination_id, rating, comment, images } = req.body;
+   const { userEmail, userName, userAvatar, destination_id, rating, comment, images } = req.body;
 
 if (!userEmail || !userName || !destination_id || !rating || !comment) {
   return res.status(400).json({ message: "Missing required fields" });
