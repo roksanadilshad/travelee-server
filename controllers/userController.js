@@ -61,15 +61,13 @@ const createNewUser = async (req, res) => {
     }
 
         if (provider === "Credential") {
-          if (password.length < 6 ) {
-      return res.status(400).json({
-        success: false,
-        message: "Password must be at least 6 characters",
-      });
-            
-        }
-    
-    }
+  if (!password || password.length < 6) {
+    return res.status(400).json({
+      success: false,
+      message: "Password must be at least 6 characters",
+    });
+  }
+}
 
     // Check existing user
     const existingUser = await db.collection("users").findOne({ email });
@@ -166,7 +164,7 @@ const ForgotPassword = async (req, res) => {
 const ResetPassword = async (req, res) => {
   try {
     const { token, newPassword } = req.body;
-    const db = connectDB();
+    const db = await connectDB();
 
     if (!token || !newPassword) {
       return res.status(400).json({ success: false, message: "Token and password are required" });

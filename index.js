@@ -14,6 +14,7 @@ const app = express();
 const port = process.env.PORT || 5000;
 const dns = require("node:dns/promises").setServers(["1.1.1.1", "8.8.8.8"]);
  
+app.use(express.json());
 
 const allowedOrigins = [
   "https://travelee-client.vercel.app", // Production
