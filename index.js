@@ -55,7 +55,7 @@ app.get("/", (req, res) => {
   res.send("Travelee Server is running...");
 });
 
-// app.listen(port, () => {
-//   console.log(`Server listening on port ${port}`);
-// });
+app.listen(port, () => {
+  console.log(`Server listening on port ${port}`);
+});
 module.exports = app;
