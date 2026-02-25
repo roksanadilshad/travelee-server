@@ -14,6 +14,7 @@ const app = express();
 const port = process.env.PORT || 5000;
 const dns = require("node:dns/promises").setServers(["1.1.1.1", "8.8.8.8"]);
  
+app.use(express.json());
 
 const allowedOrigins = [
   "https://travelee-client.vercel.app", // Production
@@ -21,10 +22,10 @@ const allowedOrigins = [
   "http://localhost:5173"               // Vite Dev (if using Vite)
 ];
 
-app.use(cors({
-   origin: process.env.CLIENT_URL,
-    credentials: true
-}));
+// app.use(cors({
+//    origin: process.env.CLIENT_URL,
+//     credentials: true
+// }));
 app.use(cors({
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl)

@@ -83,4 +83,4 @@ const deleteMyTrip = async (req, res) => {
   }
 };
 
-module.exports = { getMyTrips, deleteMyTrip };
+module.exports = { getMyTrips, deleteMyTrip, addToMyTrips };
