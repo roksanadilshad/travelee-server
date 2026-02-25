@@ -3,7 +3,7 @@ const { getDB } = require("../config/db");
 const verifyAdmin = async (req, res, next) => {
   try {
     const email = req.decoded_email;
-    const db = getDB();
+    const db = await connectDB();
     const user = await db.collection("users").findOne({ email });
 
     if (!user || user.role !== "admin") {

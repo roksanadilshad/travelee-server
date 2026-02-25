@@ -13,7 +13,7 @@ const transporter = nodemailer.createTransport({
 });
 
 const getUser= async(req,res)=>{
-    const db = connectDB()
+    const db = await connectDB();
     const result = await db.collection("users").find().toArray();
     res.send(result)
 }
@@ -50,7 +50,8 @@ const getSingleUser = async (req, res) => {
 const createNewUser = async (req, res) => {
       try {
     const { fullName, email, password, provider, image } = req.body;
-         const db = await connectDB()
+
+         const db = await connectDB();
         //  Basic Validation
       
     if (!fullName || !email || !provider) {
@@ -61,15 +62,13 @@ const createNewUser = async (req, res) => {
     }
 
         if (provider === "Credential") {
-          if (password.length < 6 ) {
-      return res.status(400).json({
-        success: false,
-        message: "Password must be at least 6 characters",
-      });
-            
-        }
-    
-    }
+  if (!password || password.length < 6) {
+    return res.status(400).json({
+      success: false,
+      message: "Password must be at least 6 characters",
+    });
+  }
+}
 
     // Check existing user
     const existingUser = await db.collection("users").findOne({ email });
@@ -126,7 +125,8 @@ const ForgotPassword = async (req, res) => {
     const { email } = req.body;
     const db = await connectDB();
 
-    if (!email) {
+    
+     if (!email) {
       return res.status(400).json({ success: false, message: "Email is required" });
     }
 
