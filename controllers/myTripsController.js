@@ -1,16 +1,49 @@
-const { getDB } = require("../config/db");
+const { getDB, connectDB } = require("../config/db");
 const { mytrips } = require("../constants/collections");
 const { ObjectId } = require("mongodb");
 
-// GET My Trips by userEmail
+// GET My Trips (optionally by user)
+// const getMyTrips = async (req, res) => {
+//   try {
+//     const db = await connectDB();
+//     const { userEmail } = req.query;
+
+//     const query = userId ? { userId } : {};
+
+//     const trips = await db.collection(mytrips).find(query).toArray();
+
+//     const formattedTrips = trips.map((trip) => ({
+//       _id: trip._id,
+//       destination_id: trip.destination_id,
+//       country: trip.country,
+//       startDate: trip.startDate,
+//       endDate: trip.endDate,
+//       duration: trip.duration,
+//       city: trip.city,
+//       region: trip.region,
+//       image: trip.media?.cover_image || "",
+//       userEmail: trip.userEmail,
+//       userName: trip.userName,
+//       createdAt: trip.createdAt,
+//     }));
+
+//     res.status(200).json(formattedTrips);
+//   } catch (err) {
+//     console.error("Error fetching My Trips:", err);
+//     res.status(500).json({ message: "Failed to fetch My Trips" });
+//   }
+// };
+
+
 const getMyTrips = async (req, res) => {
   try {
-    const db = getDB();
+    const db = await connectDB();
     const { userEmail } = req.query;
 
     if (!userEmail) {
       return res.status(400).json({ message: "userEmail is required" });
     }
+
 
     const trips = await db
       .collection(mytrips)
@@ -31,18 +64,17 @@ const getMyTrips = async (req, res) => {
       userName: trip.userName,
       createdAt: trip.createdAt,
     }));
-
-    res.status(200).json(formattedTrips);
-  } catch (err) {
-    console.error("Error fetching My Trips:", err);
-    res.status(500).json({ message: "Failed to fetch My Trips" });
+    res.status(200).json({
+      success: true,
+      data: formattedTrips
+    });
   }
-};
-
+  catch{}
+}
 // ADD to My Trips
 const addToMyTrips = async (req, res) => {
   try {
-    const db = getDB();
+    const db = await connectDB();
     const tripData = req.body;
 
     if (!tripData.userEmail) {
@@ -73,7 +105,7 @@ const addToMyTrips = async (req, res) => {
 // DELETE My Trip
 const deleteMyTrip = async (req, res) => {
   try {
-    const db = getDB();
+    const db = await connectDB();
     const { id } = req.params;
 
     const result = await db.collection(mytrips).deleteOne({
