@@ -4,5 +4,6 @@ module.exports = {
   destinations: "destinations",
   itineraries: "itineraries",
    mytrips: "mytrips",
-   tripreviews: "tripreviews"
+   tripreviews: "tripreviews",
+    wishlists: "wishlists",
 };

@@ -10,6 +10,7 @@ const reviewRoutes = require("./routes/reviewRoutes");
 const usersRoutes = require("./routes/userRoutes");
 const myTripsRoutes = require("./routes/myTripsRoutes");
 const tripreviewRoutes = require("./routes/tripreviewRoutes");
+const wishlistRoutes = require("./routes/wishlistRoutes");
 const app = express();
 const port = process.env.PORT || 5000;
 const dns = require("node:dns/promises").setServers(["1.1.1.1", "8.8.8.8"]);
@@ -50,6 +51,7 @@ app.use("/reviews", reviewRoutes);
 app.use("/user", usersRoutes);
 app.use("/my-trips", myTripsRoutes);
 app.use("/api/tripreviews", tripreviewRoutes);
+app.use("/wishlists", wishlistRoutes);
 
 app.get("/", (req, res) => {
   res.send("Travelee Server is running...");
