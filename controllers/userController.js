@@ -147,7 +147,7 @@ const ForgotPassword = async (req, res) => {
       { $set: { resetPasswordToken: resetTokenHash, resetPasswordExpires: resetTokenExpires } }
     );
 
-    const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+    const resetUrl = `${process.env.CLIENT_URL}/reset-password?token=${resetToken}`;
 
     await transporter.sendMail({
       from: `"Travelee" <${process.env.MAIL_USER}>`,
