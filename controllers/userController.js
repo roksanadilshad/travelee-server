@@ -1,4 +1,4 @@
-const { getDB, connectDB } = require("../config/db");
+const { connectDB } = require("../config/db");
 const bcrypt = require("bcrypt");
 const crypto = require("crypto");
 
@@ -12,11 +12,19 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-const getUser= async(req,res)=>{
+const getUser = async (req, res) => {
+  try {
     const db = await connectDB();
     const result = await db.collection("users").find().toArray();
-    res.send(result)
-}
+    return res.send(result);
+  } catch (error) {
+    console.error("Get Users Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
 
 const getSingleUser = async (req, res) => {
   try {
