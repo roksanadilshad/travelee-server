@@ -52,6 +52,7 @@ app.use("/user", usersRoutes);
 app.use("/my-trips", myTripsRoutes);
 app.use("/api/tripreviews", tripreviewRoutes);
 app.use("/wishlists", wishlistRoutes);
+app.use("/api/checkout/route.js", paymentRoutes);
 
 app.get("/", (req, res) => {
   res.send("Travelee Server is running...");
