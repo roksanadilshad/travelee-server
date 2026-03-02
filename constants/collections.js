@@ -6,4 +6,5 @@ module.exports = {
    mytrips: "mytrips",
    tripreviews: "tripreviews",
     wishlists: "wishlists",
+    payments: "payments",
 };
