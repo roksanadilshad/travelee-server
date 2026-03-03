@@ -56,8 +56,8 @@ const createCheckoutSession = async (req, res) => {
     quantity: 1,
   }],
   mode: 'payment',
-  success_url: `${process.env.FRONTEND_URL}/success?tripId=${tripId}`,
-  cancel_url: `${process.env.FRONTEND_URL}/itinerary`,
+  success_url: `${process.env.CLIENT_URL}/success?tripId=${tripId}`,
+  cancel_url: `${process.env.CLIENT_URL}/itinerary`,
     });
 
     res.status(200).json({ url: session.url });
