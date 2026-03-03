@@ -3,9 +3,9 @@ const { getMyTrips, deleteMyTrip, addToMyTrips } = require("../controllers/myTri
 
 const router = express.Router();
 
+router.get("/", getMyTrips);
 router.post("/", addToMyTrips)
 
-router.get("/", getMyTrips);
 
 
 router.delete("/:id", deleteMyTrip);
