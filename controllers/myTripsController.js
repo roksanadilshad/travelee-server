@@ -2,76 +2,30 @@ const { getDB, connectDB } = require("../config/db");
 const { mytrips } = require("../constants/collections");
 const { ObjectId } = require("mongodb");
 
-// GET My Trips (optionally by user)
-// const getMyTrips = async (req, res) => {
-//   try {
-//     const db = await connectDB();
-//     const { userEmail } = req.query;
-
-//     const query = userId ? { userId } : {};
-
-//     const trips = await db.collection(mytrips).find(query).toArray();
-
-//     const formattedTrips = trips.map((trip) => ({
-//       _id: trip._id,
-//       destination_id: trip.destination_id,
-//       country: trip.country,
-//       startDate: trip.startDate,
-//       endDate: trip.endDate,
-//       duration: trip.duration,
-//       city: trip.city,
-//       region: trip.region,
-//       image: trip.media?.cover_image || "",
-//       userEmail: trip.userEmail,
-//       userName: trip.userName,
-//       createdAt: trip.createdAt,
-//     }));
-
-//     res.status(200).json(formattedTrips);
-//   } catch (err) {
-//     console.error("Error fetching My Trips:", err);
-//     res.status(500).json({ message: "Failed to fetch My Trips" });
-//   }
-// };
-
-
+// 1. GET My Trips (Modified to handle User Email and Payment Status)
 const getMyTrips = async (req, res) => {
   try {
     const db = await connectDB();
-    const { userEmail } = req.query;
+    const email = req.query.email || req.query.userEmail;
 
-    if (!userEmail) {
-      return res.status(400).json({ message: "userEmail is required" });
-    }
+    if (!email) return res.status(400).json({ success: false });
 
-
-    const trips = await db
-      .collection(mytrips)
-      .find({ userEmail })
+    const trips = await db.collection(mytrips)
+      .find({ userEmail: email })
+      .sort({ createdAt: -1 })
       .toArray();
 
-    const formattedTrips = trips.map((trip) => ({
-      _id: trip._id,
-      destination_id: trip.destination_id,
-      country: trip.country,
-      startDate: trip.startDate,
-      endDate: trip.endDate,
-      duration: trip.duration,
-      city: trip.city,
-      region: trip.region,
-      image: trip.media?.cover_image || "",
-      userEmail: trip.userEmail,
-      userName: trip.userName,
-      createdAt: trip.createdAt,
-    }));
+    // Since we fixed the save format, we just return the trips directly
     res.status(200).json({
       success: true,
-      data: formattedTrips
+      data: trips 
     });
+  } catch (err) {
+    res.status(500).json({ success: false });
   }
-  catch{}
-}
-// ADD to My Trips
+};
+
+// 2. ADD to My Trips (This is called when they click "Plan" or "Book")
 const addToMyTrips = async (req, res) => {
   try {
     const db = await connectDB();
@@ -81,21 +35,27 @@ const addToMyTrips = async (req, res) => {
       return res.status(400).json({ message: "User email required" });
     }
 
+    // Check if this specific trip for this user already exists
     const exists = await db.collection(mytrips).findOne({
       destination_id: tripData.destination_id,
       userEmail: tripData.userEmail,
     });
 
     if (exists) {
-      return res.status(409).json({ message: "Trip already exists" });
+      return res.status(409).json({ message: "Trip already exists in your list" });
     }
 
     const result = await db.collection(mytrips).insertOne({
       ...tripData,
+      status: tripData.status || "pending", // Default to pending until Stripe clears
       createdAt: new Date(),
     });
 
-    res.status(201).json({ message: "Trip added successfully", insertedId: result.insertedId });
+    res.status(201).json({ 
+      success: true, 
+      message: "Trip added successfully", 
+      insertedId: result.insertedId 
+    });
   } catch (err) {
     console.error("Error adding to My Trips:", err);
     res.status(500).json({ message: "Failed to add to My Trips" });

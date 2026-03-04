@@ -1,3 +1,4 @@
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const http = require("http"); // <-- NEW CODE
@@ -13,9 +14,9 @@ const usersRoutes = require("./routes/userRoutes");
 const myTripsRoutes = require("./routes/myTripsRoutes");
 const tripreviewRoutes = require("./routes/tripreviewRoutes");
 
+const paymentRoutes = require('./routes/paymentRoutes');
 const app = express();
 const port = process.env.PORT || 5000;
-app.use(express.json()); //NEW CODE-->>
 const dns = require("node:dns/promises").setServers(["1.1.1.1", "8.8.8.8"]);
 
 // --- NEW CODE START (Socket Server Setup) ---
@@ -107,6 +108,10 @@ app.use("/reviews", reviewRoutes);
 app.use("/user", usersRoutes);
 app.use("/my-trips", myTripsRoutes);
 app.use("/api/tripreviews", tripreviewRoutes);
+app.use("/wishlists", wishlistRoutes);
+app.use('/api/payments', paymentRoutes);
+
+app.use("/admin", adminRoutes);
 
 app.get("/", (req, res) => {
   res.send("Travelee Server is running...");
@@ -123,4 +128,6 @@ server.listen(port, () => {
 });
 // --- CHANGE END ---
 
+module.exports = app;
+// });
 module.exports = app;

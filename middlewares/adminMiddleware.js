@@ -1,19 +1,30 @@
-const { getDB } = require("../config/db");
+// const { getDB } = require("../config/db");
 
-const verifyAdmin = async (req, res, next) => {
-  try {
-    const email = req.decoded_email;
-    const db = await connectDB();
-    const user = await db.collection("users").findOne({ email });
+// const verifyAdmin = async (req, res, next) => {
+//   try {
+//     const email = req.decoded_email;
+//     const db = await connectDB();
+//     const user = await db.collection("users").findOne({ email });
 
-    if (!user || user.role !== "admin") {
-      return res.status(403).send({ message: "Admin access only" });
-    }
+//     if (!user || user.role !== "admin") {
+//       return res.status(403).send({ message: "Admin access only" });
+//     }
 
-    next();
-  } catch (err) {
-    res.status(500).send({ message: "Internal server error" });
+//     next();
+//   } catch (err) {
+//     res.status(500).send({ message: "Internal server error" });
+//   }
+// };
+
+// module.exports=verifyAdmin;
+
+
+const verifyAdmin = (req, res, next) => {
+  if (req.user?.role !== "admin") {
+    return res.status(403).send({ message: "Admin access only" });
   }
+
+  next();
 };
 
-module.exports=verifyAdmin;
+module.exports = verifyAdmin;

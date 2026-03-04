@@ -6,6 +6,7 @@ const createItinerary = async (req, res) => {
   try {
     const db = await connectDB();
     const tripData = req.body;
+<<<<<<< HEAD
     // console.log(tripData)
 
     // 1. Basic Validation
@@ -15,6 +16,8 @@ const createItinerary = async (req, res) => {
     // }
 
     // 2. Insert into MongoDB
+=======
+>>>>>>> bf0e96c16c4a9d024f1ef2acdd65eace35bd3fe4
     const result = await db.collection(itineraries).insertOne({
       ...tripData,
       status: "saved",
@@ -29,22 +32,45 @@ const createItinerary = async (req, res) => {
   }
 };
 
+// controllers/itineraryController.js
+
 const getUserItineraries = async (req, res) => {
   try {
-    const email = req.params.email;
+    const { email } = req.params; 
     const db = await connectDB();
 
+    if (!email) {
+      return res.status(400).send({ message: "User email is required" });
+    }
+
     const result = await db
-      .collection("itineraries")
+      .collection(itineraries) 
       .find({ userEmail: email })
       .sort({ createdAt: -1 })
       .toArray();
 
-    res.send(result);
+    res.status(200).send(result);
   } catch (error) {
-    res.status(500).send({ error: "Failed to fetch itineraries" });
+    console.error("Fetch Error:", error);
+    res.status(500).send({ message: "Failed to fetch your trips" });
   }
 };
+
+
+const getSingleItinerary = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const db = await connectDB();
+    const result = await db.collection("itineraries").findOne({ _id: new ObjectId(id) });
+    
+    if (!result) return res.status(404).send({ message: "Not found" });
+    res.send(result);
+  } catch (error) {
+    res.status(500).send({ message: "Error fetching itinerary" });
+  }
+};
+
+
 
 const deleteItinerary = async (req, res) => {
   try {
@@ -90,20 +116,26 @@ const deleteActivity = async (req, res) => {
     const db = await connectDB();
     const { itineraryId, activityId } = req.params;
 
+    console.log("Deleting Activity:", { itineraryId, activityId }); // DEBUG
+
     if (!ObjectId.isValid(itineraryId)) {
-      return res.status(400).send({ success: false, message: "Invalid ID" });
+      return res.status(400).send({ success: false, message: "Invalid Itinerary ID format" });
     }
 
-    const result = await db.collection("itineraries").updateOne(
+    const result = await db.collection(itineraries).updateOne(
       { _id: new ObjectId(itineraryId) },
       {
         $pull: {
           "days.$[].activities": {
-            id: Number(activityId),
+            id: Number(activityId), // Ensure this matches the data type in your DB
           },
         },
       },
     );
+
+    if (result.modifiedCount === 0) {
+        return res.status(404).send({ success: false, message: "No activity found to delete" });
+    }
 
     res.send({ success: true });
   } catch (error) {
@@ -144,3 +176,4 @@ module.exports = {
   deleteActivity,
   updateItinerary,
 };
+module.exports = {getSingleItinerary, createItinerary, getUserItineraries , deleteItinerary, deleteActivity};
