@@ -1,6 +1,6 @@
-const {getDB, connectDB} =require('../config/db');
+const { getDB, connectDB } = require("../config/db");
 const { ObjectId } = require("mongodb");
-const { itineraries } = require('../constants/collections');
+const { itineraries } = require("../constants/collections");
 
 const createItinerary = async (req, res) => {
   try {
@@ -9,25 +9,25 @@ const createItinerary = async (req, res) => {
     // console.log(tripData)
 
     // 1. Basic Validation
-    
+
     // if (!tripData.destination || tripData.days.length === 0) {
     //   return res.status(400).send({ message: "Trip must have a destination and at least one day." });
     // }
 
     // 2. Insert into MongoDB
     const result = await db.collection(itineraries).insertOne({
-  ...tripData,
-  status: 'saved',
-  createdAt: new Date(),
-  updatedAt: new Date()
-});
+      ...tripData,
+      status: "saved",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
 
     res.status(201).send({ success: true, insertedId: result.insertedId });
   } catch (error) {
     console.error("Database Error:", error);
     res.status(500).send({ message: "Internal Server Error" });
   }
-}
+};
 
 const getUserItineraries = async (req, res) => {
   try {
@@ -45,7 +45,6 @@ const getUserItineraries = async (req, res) => {
     res.status(500).send({ error: "Failed to fetch itineraries" });
   }
 };
-
 
 const deleteItinerary = async (req, res) => {
   try {
@@ -103,7 +102,7 @@ const deleteActivity = async (req, res) => {
             id: Number(activityId),
           },
         },
-      }
+      },
     );
 
     res.send({ success: true });
@@ -113,5 +112,35 @@ const deleteActivity = async (req, res) => {
   }
 };
 
+// --- NEW CODE START ---
+const updateItinerary = async (req, res) => {
+  try {
+    const db = await connectDB();
+    const { id } = req.params;
+    const updateData = req.body;
 
-module.exports = { createItinerary, getUserItineraries , deleteItinerary, deleteActivity};
+    if (!ObjectId.isValid(id)) {
+      return res.status(400).send({ success: false, message: "Invalid ID" });
+    }
+
+    const result = await db
+      .collection("itineraries")
+      .updateOne(
+        { _id: new ObjectId(id) },
+        { $set: { ...updateData, updatedAt: new Date() } },
+      );
+
+    res.send({ success: true, message: "Updated successfully" });
+  } catch (error) {
+    res.status(500).send({ success: false, message: "Internal Server Error" });
+  }
+};
+// --- NEW CODE END ---
+
+module.exports = {
+  createItinerary,
+  getUserItineraries,
+  deleteItinerary,
+  deleteActivity,
+  updateItinerary,
+};
