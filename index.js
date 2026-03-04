@@ -5,7 +5,6 @@ const http = require("http");
 const { Server } = require("socket.io");
 const { connectDB } = require("./config/db");
 
-
 // Routes Import
 const destinationRoutes = require("./routes/destinationRoutes");
 const itineraryRoutes = require("./routes/itineraryRoutes");
@@ -14,8 +13,6 @@ const usersRoutes = require("./routes/userRoutes");
 const myTripsRoutes = require("./routes/myTripsRoutes");
 const tripreviewRoutes = require("./routes/tripreviewRoutes");
 const paymentRoutes = require('./routes/paymentRoutes');
-
-
 const wishlistRoutes = require("./routes/wishlistRoutes"); 
 const adminRoutes = require("./routes/adminRoutes"); 
 
@@ -107,11 +104,13 @@ app.get("/", (req, res) => {
   res.send("Travelee Server is running...");
 });
 
-// Database Connection & Server Start
+// Database Connection & Server Start 
 connectDB().then(() => {
     server.listen(port, () => {
-      console.log(`🚀 Server listening on port ${port}`);
+      console.log(`🚀 Database Connected & Server listening on port ${port}`);
     });
+}).catch(err => {
+    console.error("Failed to connect to DB:", err);
 });
 
 module.exports = app;
