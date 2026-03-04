@@ -5,6 +5,7 @@ const http = require("http");
 const { Server } = require("socket.io");
 const { connectDB } = require("./config/db");
 
+
 // Routes Import
 const destinationRoutes = require("./routes/destinationRoutes");
 const itineraryRoutes = require("./routes/itineraryRoutes");
