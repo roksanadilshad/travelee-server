@@ -17,6 +17,8 @@ const app = express();
 const port = process.env.PORT || 5000;
 const dns = require("node:dns/promises").setServers(["1.1.1.1", "8.8.8.8"]);
 
+// const auth = require("./middlewares/auth")
+
 app.use(express.json());
 
 const allowedOrigins = [
@@ -53,6 +55,7 @@ app.use("/reviews", reviewRoutes);
 app.use("/user", usersRoutes);
 app.use("/my-trips", myTripsRoutes);
 app.use("/api/tripreviews", tripreviewRoutes);
+// app.use("/api", auth);
 app.use("/wishlists", wishlistRoutes);
 app.use('/api/payments', paymentRoutes);
 
