@@ -13,7 +13,9 @@ const tripreviewRoutes = require("./routes/tripreviewRoutes");
 const app = express();
 const port = process.env.PORT || 5000;
 const dns = require("node:dns/promises").setServers(["1.1.1.1", "8.8.8.8"]);
- 
+
+// const auth = require("./middlewares/auth")
+
 app.use(express.json());
 
 const allowedOrigins = [
@@ -30,7 +32,7 @@ app.use(cors({
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl)
     if (!origin) return callback(null, true);
-    
+
     // Check if the origin is in our allowed list
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
@@ -50,12 +52,13 @@ app.use("/reviews", reviewRoutes);
 app.use("/user", usersRoutes);
 app.use("/my-trips", myTripsRoutes);
 app.use("/api/tripreviews", tripreviewRoutes);
+// app.use("/api", auth);
 
 app.get("/", (req, res) => {
   res.send("Travelee Server is running...");
 });
 
-// app.listen(port, () => {
-//   console.log(`Server listening on port ${port}`);
-// });
+app.listen(port, () => {
+  console.log(`Server listening on port ${port}`);
+});
 module.exports = app;

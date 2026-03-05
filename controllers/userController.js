@@ -1,6 +1,7 @@
 const { connectDB } = require("../config/db");
 const bcrypt = require("bcrypt");
 const crypto = require("crypto");
+const jwt = require("jsonwebtoken");
 
 const nodemailer = require("nodemailer");
 
@@ -28,7 +29,7 @@ const getUser = async (req, res) => {
 
 const getSingleUser = async (req, res) => {
   try {
-    const { email } = req.query;
+    const { email, password } = req.body;
     const db = await connectDB();
 
     if (!email) {
@@ -40,10 +41,21 @@ const getSingleUser = async (req, res) => {
 
     const user = await db.collection("users").findOne({ email });
 
+    const token = jwt.sign(
+      { id: user?._id, email: user?.email },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" },
+    );
     
+
+    console.log("Backend token :", token);
+    
+
+
     return res.status(200).json({
       success: true,
       data: user || null,
+      token: token,
     });
 
   } catch (err) {
@@ -155,7 +167,7 @@ const ForgotPassword = async (req, res) => {
       { $set: { resetPasswordToken: resetTokenHash, resetPasswordExpires: resetTokenExpires } }
     );
 
-    const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+    const resetUrl = `${process.env.CLIENT_URL}/reset-password?token=${resetToken}`;
 
     await transporter.sendMail({
       from: `"Travelee" <${process.env.MAIL_USER}>`,
