@@ -115,6 +115,7 @@ if (provider === "Credential") {
       image,
       provider,
       password: userPassword,
+      role: "user",
       createdAt: new Date(),
         };
         
