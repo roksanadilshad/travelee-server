@@ -105,13 +105,7 @@ app.get("/", (req, res) => {
   res.send("Travelee Server is running...");
 });
 
-// Database Connection & Server Start 
-connectDB().then(() => {
-    server.listen(port, () => {
-      console.log(`🚀 Database Connected & Server listening on port ${port}`);
-    });
-}).catch(err => {
-    console.error("Failed to connect to DB:", err);
-});
-
+// app.listen(port, () => {
+//   console.log(`Server listening on port ${port}`);
+// });
 module.exports = app;
