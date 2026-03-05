@@ -96,6 +96,7 @@ app.use("/reviews", reviewRoutes);
 app.use("/user", usersRoutes);
 app.use("/my-trips", myTripsRoutes);
 app.use("/api/tripreviews", tripreviewRoutes);
+// app.use("/api", auth);
 app.use("/wishlists", wishlistRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use("/admin", adminRoutes);
