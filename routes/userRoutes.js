@@ -3,8 +3,10 @@ const { getUser, getSingleUser, createNewUser, ForgotPassword, ResetPassword } =
 
 const router = express.Router();
 
-router.get('/', getUser);
-router.get('/email', getSingleUser);
+const auth = require("../middlewares/auth");
+
+router.get("/", auth, getUser);
+router.post('/email', getSingleUser);
 router.post('/', createNewUser);
 router.post('/forgot-password', ForgotPassword);
 router.post('/reset-password', ResetPassword);
