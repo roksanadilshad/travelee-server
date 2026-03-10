@@ -12,6 +12,7 @@ const myTripsRoutes = require("./routes/myTripsRoutes");
 const tripreviewRoutes = require("./routes/tripreviewRoutes");
 const wishlistRoutes = require("./routes/wishlistRoutes");
 const paymentRoutes = require('./routes/paymentRoutes');
+const itineraryWeatherRoutes = require("./routes/itineraryWeatherRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const app = express();
 const port = process.env.PORT || 5000;
@@ -54,6 +55,7 @@ app.use("/user", usersRoutes);
 app.use("/my-trips", myTripsRoutes);
 app.use("/api/tripreviews", tripreviewRoutes);
 app.use("/wishlists", wishlistRoutes);
+app.use("/itinerary", itineraryWeatherRoutes);
 app.use('/api/payments', paymentRoutes);
 
 app.use("/admin", adminRoutes);
