@@ -1,6 +1,6 @@
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
-require("dotenv").config();
 
 const { connectDB } = require("./config/db");
 
@@ -10,6 +10,9 @@ const reviewRoutes = require("./routes/reviewRoutes");
 const usersRoutes = require("./routes/userRoutes");
 const myTripsRoutes = require("./routes/myTripsRoutes");
 const tripreviewRoutes = require("./routes/tripreviewRoutes");
+const wishlistRoutes = require("./routes/wishlistRoutes");
+const paymentRoutes = require('./routes/paymentRoutes');
+const adminRoutes = require("./routes/adminRoutes");
 const app = express();
 const port = process.env.PORT || 5000;
 const dns = require("node:dns/promises").setServers(["1.1.1.1", "8.8.8.8"]);
@@ -53,6 +56,10 @@ app.use("/user", usersRoutes);
 app.use("/my-trips", myTripsRoutes);
 app.use("/api/tripreviews", tripreviewRoutes);
 // app.use("/api", auth);
+app.use("/wishlists", wishlistRoutes);
+app.use('/api/payments', paymentRoutes);
+
+app.use("/admin", adminRoutes);
 
 app.get("/", (req, res) => {
   res.send("Travelee Server is running...");

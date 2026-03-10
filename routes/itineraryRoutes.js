@@ -1,5 +1,5 @@
 const express = require('express');
-const { createItinerary, getUserItineraries, deleteItinerary, deleteActivity } = require('../controllers/itineraryController');
+const { createItinerary, getUserItineraries, deleteItinerary, deleteActivity, getSingleItinerary } = require('../controllers/itineraryController');
 const validateItinerary = require('../middlewares/itineraryValidation');
 
 
@@ -9,6 +9,7 @@ router.post('/',validateItinerary, createItinerary);
 router.get('/user/:email', getUserItineraries);
 router.get('/', getUserItineraries);
 router.delete("/:id", deleteItinerary);
+router.get("/:id", getSingleItinerary);
 router.delete("/:itineraryId/activity/:activityId", deleteActivity);
 
 module.exports = router;
