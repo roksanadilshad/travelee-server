@@ -66,13 +66,13 @@ const io = new Server(server, {
 let activeUsers = {};
 
 io.on("connection", (socket) => {
-  console.log(`🔌 New client connected: ${socket.id}`);
+  console.log(` New client connected: ${socket.id}`);
 
   // Personal room for notifications/invites
   socket.on("join-personal-room", (userId) => {
     if (userId) {
       socket.join(userId);
-      console.log(`👤 User joined personal room: ${userId}`);
+      console.log(` User joined personal room: ${userId}`);
     }
   });
 
@@ -81,7 +81,7 @@ io.on("connection", (socket) => {
     // data = { friendId, senderName, tripId, tripTitle }
     if (data && data.friendId) {
       io.to(data.friendId).emit("receive-invite", data);
-      console.log(`✉️ Invite sent to: ${data.friendId}`);
+      console.log(` Invite sent to: ${data.friendId}`);
     }
   });
 
@@ -89,7 +89,7 @@ io.on("connection", (socket) => {
   socket.on("join-trip", ({ tripId, user }) => {
     // Safety check to prevent "undefined" or "temp-room" issues
     if (!tripId || tripId === "temp-id" || !user || !user.email) {
-      return console.log("⚠️ Invalid tripId or user data for collaboration.");
+      return console.log(" Invalid tripId or user data for collaboration.");
     }
 
     socket.join(tripId);
