@@ -5,7 +5,7 @@ module.exports = (req, res, next) => {
   if (!req.header("auth-token")) {
     return res.status(401).json({
       error: true,
-      message: "user not Unauthorized.",
+      message: "user not authorized.",
     });
   }
   let token = req.header("auth-token");
@@ -13,7 +13,7 @@ module.exports = (req, res, next) => {
     if (err) {
       return res.status(401).json({
         error: true,
-        message: "user not unauthorized.",
+        message: "user not authorized.",
       });
     } else {
       req.user = userInfo;
