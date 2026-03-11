@@ -1,4 +1,6 @@
 const express = require("express");
+const { getMyTrips, deleteMyTrip, addToMyTrips } = require("../controllers/myTripsController");
+const auth = require("../middlewares/auth")
 const router = express.Router();
 const {
   getMyTrips,
@@ -13,9 +15,7 @@ const {
 
 const authMiddleware = require("../middlewares/authMiddleware");
 
-router.get("/", authMiddleware, getMyTrips);
-router.post("/", authMiddleware, addToMyTrips);
-router.delete("/:id", authMiddleware, deleteMyTrip);
+router.get("/", auth, getMyTrips);
 
 router.post("/invite", authMiddleware, inviteMember);
 

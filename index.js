@@ -63,6 +63,9 @@ const io = new Server(server, {
     origin: allowedOrigins,
     methods: ["GET", "POST"],
   },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+allowedHeaders: ["Content-Type", "Authorization", "auth-token"]
 });
 
 let activeUsers = {};

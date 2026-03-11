@@ -11,10 +11,10 @@ const validateItinerary = require("../middlewares/itineraryValidation");
 
 const router = express.Router();
 
-router.post("/", validateItinerary, createItinerary);
-
-router.get("/user/:email", getUserItineraries);
-
+router.post('/',validateItinerary, createItinerary);
+router.get('/user/:email', getUserItineraries);
+router.get('/', getUserItineraries);
+router.delete("/:id", deleteItinerary);
 router.get("/:id", getSingleItinerary);
 
 router.patch("/:id", updateItinerary);
