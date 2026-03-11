@@ -36,6 +36,7 @@ const getMyTrips = async (req, res) => {
   }
 };
 
+// add new trip
 const addToMyTrips = async (req, res) => {
   try {
     const db = await connectDB();
@@ -72,6 +73,7 @@ const addToMyTrips = async (req, res) => {
   }
 };
 
+// delete
 const deleteMyTrip = async (req, res) => {
   try {
     const db = await connectDB();
