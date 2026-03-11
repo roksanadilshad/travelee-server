@@ -14,7 +14,7 @@ const myTripsRoutes = require("./routes/myTripsRoutes");
 const tripreviewRoutes = require("./routes/tripreviewRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
 const wishlistRoutes = require("./routes/wishlistRoutes");
-const paymentRoutes = require('./routes/paymentRoutes');
+//const paymentRoutes = require('./routes/paymentRoutes');
 const itineraryWeatherRoutes = require("./routes/itineraryWeatherRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 
