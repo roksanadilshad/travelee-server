@@ -12,15 +12,15 @@ const reviewRoutes = require("./routes/reviewRoutes");
 const usersRoutes = require("./routes/userRoutes");
 const myTripsRoutes = require("./routes/myTripsRoutes");
 const tripreviewRoutes = require("./routes/tripreviewRoutes");
-const paymentRoutes = require('./routes/paymentRoutes');
-const wishlistRoutes = require("./routes/wishlistRoutes"); 
-const adminRoutes = require("./routes/adminRoutes"); 
+const paymentRoutes = require("./routes/paymentRoutes");
+const wishlistRoutes = require("./routes/wishlistRoutes");
+const adminRoutes = require("./routes/adminRoutes");
 
 const app = express();
 const port = process.env.PORT || 5000;
 
 // Middleware
-app.use(express.json()); 
+app.use(express.json());
 
 const allowedOrigins = [
   "https://travelee-client.vercel.app",
@@ -41,8 +41,18 @@ app.use(
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
-  })
+  }),
 );
+
+// Database Connection
+connectDB()
+  .then((database) => {
+    app.locals.db = database;
+    console.log("✅ MongoDB connected and shared via app.locals.db");
+  })
+  .catch((err) => {
+    console.error("❌ Failed to connect to DB:", err);
+  });
 
 // --- Socket Server Setup ---
 const server = http.createServer(app);
@@ -56,27 +66,82 @@ const io = new Server(server, {
 let activeUsers = {};
 
 io.on("connection", (socket) => {
+  console.log(` New client connected: ${socket.id}`);
+
+  // Personal room for notifications/invites
+  socket.on("join-personal-room", (userId) => {
+    if (userId) {
+      socket.join(userId);
+      console.log(` User joined personal room: ${userId}`);
+    }
+  });
+
+  // Sending an invite to a friend
+  socket.on("send-invite", (data) => {
+    // data = { friendId, senderName, tripId, tripTitle }
+    if (data && data.friendId) {
+      io.to(data.friendId).emit("receive-invite", data);
+      console.log(` Invite sent to: ${data.friendId}`);
+    }
+  });
+
+  // Joining a trip collaboration room
   socket.on("join-trip", ({ tripId, user }) => {
+    // Safety check to prevent "undefined" or "temp-room" issues
+    if (!tripId || tripId === "temp-id" || !user || !user.email) {
+      return console.log(" Invalid tripId or user data for collaboration.");
+    }
+
     socket.join(tripId);
+    socket.currentTripId = tripId;
+    socket.userEmail = user.email;
+
     if (!activeUsers[tripId]) activeUsers[tripId] = [];
 
-    activeUsers[tripId].push({ ...user, socketId: socket.id });
+    // Check if the user is already tracked in activeUsers for this room
+    const alreadyInRoom = activeUsers[tripId].find(
+      (u) => u.socketId === socket.id,
+    );
+    if (!alreadyInRoom) {
+      const displayName = user.name || user.email.split("@")[0];
+      activeUsers[tripId].push({
+        ...user,
+        name: displayName,
+        socketId: socket.id,
+      });
+    }
 
+    // Emit unique user list to everyone in the room
     const uniqueUsers = Array.from(
       new Map(activeUsers[tripId].map((u) => [u.email, u])).values(),
     );
     io.to(tripId).emit("user-presence", uniqueUsers);
-    socket.currentTripId = tripId;
+
+    console.log(
+      `✈️ ${user.name || user.email} joined trip collaboration: ${tripId}`,
+    );
   });
 
+  // Real-time activity sync (Itinerary updates)
   socket.on("send-activity", (data) => {
-    console.log("Server received activity:", data);
-    io.to(data.tripId).emit("receive-activity", data);
+    if (data && data.tripId) {
+      console.log("Broadcast activity to room:", data.tripId);
+      socket.to(data.tripId).emit("receive-activity", data);
+    }
   });
 
+  // Typing indicators
+  socket.on("typing-start", ({ tripId, userName }) => {
+    if (tripId) {
+      socket.to(tripId).emit("user-is-typing", { userName });
+    }
+  });
+
+  // Disconnect handling
   socket.on("disconnect", () => {
     const tripId = socket.currentTripId;
     if (tripId && activeUsers[tripId]) {
+      // Remove the disconnected socket
       activeUsers[tripId] = activeUsers[tripId].filter(
         (u) => u.socketId !== socket.id,
       );
@@ -86,6 +151,7 @@ io.on("connection", (socket) => {
       );
       io.to(tripId).emit("user-presence", uniqueUsers);
     }
+    console.log(`❌ Client disconnected: ${socket.id}`);
   });
 });
 
@@ -96,16 +162,16 @@ app.use("/reviews", reviewRoutes);
 app.use("/user", usersRoutes);
 app.use("/my-trips", myTripsRoutes);
 app.use("/api/tripreviews", tripreviewRoutes);
-// app.use("/api", auth);
 app.use("/wishlists", wishlistRoutes);
-app.use('/api/payments', paymentRoutes);
+app.use("/api/payments", paymentRoutes);
 app.use("/admin", adminRoutes);
 
 app.get("/", (req, res) => {
-  res.send("Travelee Server is running...");
+  res.send("Travelee Server is running with Real-time Engine...");
 });
 
-// app.listen(port, () => {
-//   console.log(`Server listening on port ${port}`);
-// });
+server.listen(port, () => {
+  console.log(`🚀 Server listening on port ${port}`);
+});
+
 module.exports = app;
