@@ -1,13 +1,24 @@
 const express = require("express");
-const { getMyTrips, deleteMyTrip, addToMyTrips } = require("../controllers/myTripsController");
-
 const router = express.Router();
+const {
+  getMyTrips,
+  deleteMyTrip,
+  addToMyTrips,
+} = require("../controllers/myTripsController");
 
-router.get("/", getMyTrips);
-router.post("/", addToMyTrips)
+const {
+  inviteMember,
+  acceptInvitation,
+} = require("../controllers/invitationController");
 
+const authMiddleware = require("../middlewares/authMiddleware");
 
+router.get("/", authMiddleware, getMyTrips);
+router.post("/", authMiddleware, addToMyTrips);
+router.delete("/:id", authMiddleware, deleteMyTrip);
 
-router.delete("/:id", deleteMyTrip);
+router.post("/invite", authMiddleware, inviteMember);
+
+router.patch("/accept-invite", authMiddleware, acceptInvitation);
 
 module.exports = router;

@@ -195,6 +195,50 @@ const getTrendingDestinations = async (req, res) => {
     res.status(500).send({ error: "Server error" });
   }
 };
+const getRecommendations = async (req, res) => {
+  try {
+    const { email } = req.params;
+    const db = await connectDB();
+
+    // 1. Fetch the user's current wishlist
+    const userWishlist = await db.collection("wishlists").find({ userEmail: email }).toArray();
+
+    // If wishlist is empty, return an empty array (no recommendations)
+    if (userWishlist.length === 0) {
+      return res.send([]);
+    }
+
+    // 2. Extract unique traits from the wishlist
+    const countries = [...new Set(userWishlist.map(w => w.country).filter(Boolean))];
+    const regions = [...new Set(userWishlist.map(w => w.region).filter(Boolean))];
+    const durations = [...new Set(userWishlist.map(w => w.duration).filter(Boolean))];
+    const budgets = [...new Set(userWishlist.map(w => w.avgBudget).filter(Boolean))];
+    
+    // Extract Mongo IDs to exclude items already in the wishlist
+    const wishlistedIds = userWishlist.map(w => new ObjectId(w.destinationMongoId));
+
+    // 3. Find destinations matching ANY of these traits, excluding the ones already wishlisted
+    const recommendations = await db
+      .collection("destinations")
+      .find({
+        _id: { $nin: wishlistedIds },
+        $or: [
+          { country: { $in: countries } },
+          { region: { $in: regions } },
+          { duration: { $in: durations } },
+          { avgBudget: { $in: budgets } }
+        ]
+      })
+      .sort({ popularityScore: -1 }) // Sort by highest rating/popularity first
+      .limit(6) // Limit to 6 suggestions
+      .toArray();
+
+    res.send(recommendations);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send({ error: "Server error" });
+  }
+};
 
 
-module.exports = { getTrendingDestinations, getDestinations, getDestinationById, getRelatedDestinations };
+module.exports = { getTrendingDestinations, getDestinations, getDestinationById, getRelatedDestinations, getRecommendations };
