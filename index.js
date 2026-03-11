@@ -14,6 +14,8 @@ const myTripsRoutes = require("./routes/myTripsRoutes");
 const tripreviewRoutes = require("./routes/tripreviewRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
 const wishlistRoutes = require("./routes/wishlistRoutes");
+const paymentRoutes = require('./routes/paymentRoutes');
+const itineraryWeatherRoutes = require("./routes/itineraryWeatherRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 
 const app = express();
@@ -163,7 +165,9 @@ app.use("/user", usersRoutes);
 app.use("/my-trips", myTripsRoutes);
 app.use("/api/tripreviews", tripreviewRoutes);
 app.use("/wishlists", wishlistRoutes);
-app.use("/api/payments", paymentRoutes);
+app.use("/itinerary", itineraryWeatherRoutes);
+app.use('/api/payments', paymentRoutes);
+
 app.use("/admin", adminRoutes);
 
 app.get("/", (req, res) => {
