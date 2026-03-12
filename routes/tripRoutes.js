@@ -1,22 +1,32 @@
-// backend/routes/tripRoutes.js
-const express = require('express');
+const express = require("express");
 const router = express.Router();
+const { inviteMember, acceptInvitation } = require("../controllers/invitationController");
+const authMiddleware = require("../middlewares/authMiddleware"); 
 
-router.get('/my-trips', async (req, res) => {
+
+router.post("/invite", authMiddleware, inviteMember);
+
+
+router.patch("/accept-invitation", authMiddleware, acceptInvitation);
+
+
+router.get("/", authMiddleware, async (req, res) => {
   try {
-    const email = req.query.email;
-    const db = req.app.locals.db; 
+  
+    const email = req.user.email; 
+    const db = req.app.locals.db;
 
-    if (!email) {
-      return res.status(400).json({ message: "Email is required" });
-    }
-
-    // Querying the "trips" collection
-    const trips = await db.collection('trips')
-      .find({ userEmail: email })
+    const trips = await db
+      .collection("trips")
+      .find({
+        $or: [
+          { userEmail: email }, 
+          { "members.email": email } 
+        ]
+      })
       .sort({ createdAt: -1 })
       .toArray();
-    
+
     res.status(200).json(trips);
   } catch (error) {
     console.error("Database Error:", error);

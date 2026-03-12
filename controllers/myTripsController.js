@@ -2,59 +2,70 @@ const { getDB, connectDB } = require("../config/db");
 const { mytrips } = require("../constants/collections");
 const { ObjectId } = require("mongodb");
 
-// 1. GET My Trips (Modified to handle User Email and Payment Status)
 const getMyTrips = async (req, res) => {
   try {
     const db = await connectDB();
-    const email = req.query.email || req.query.userEmail;
 
-    if (!email) return res.status(400).json({ success: false });
+    const userEmail = req.user.email;
 
-    const trips = await db.collection(mytrips)
-      .find({ userEmail: email })
+    if (!userEmail)
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+
+    const trips = await db
+      .collection(mytrips)
+      .find({
+        $or: [
+          { userEmail: userEmail },
+          {
+            members: {
+              $elemMatch: { email: userEmail, status: "accepted" },
+            },
+          },
+        ],
+      })
       .sort({ createdAt: -1 })
       .toArray();
 
-    // Since we fixed the save format, we just return the trips directly
     res.status(200).json({
       success: true,
-      data: trips 
+      data: trips,
     });
   } catch (err) {
-    res.status(500).json({ success: false });
+    console.error("Get My Trips Error:", err);
+    res.status(500).json({ success: false, message: "Server Error" });
   }
 };
 
-// 2. ADD to My Trips (This is called when they click "Plan" or "Book")
+// add new trip
 const addToMyTrips = async (req, res) => {
   try {
     const db = await connectDB();
     const tripData = req.body;
+    const userEmail = req.user.email;
 
-    if (!tripData.userEmail) {
-      return res.status(400).json({ message: "User email required" });
-    }
-
-    // Check if this specific trip for this user already exists
     const exists = await db.collection(mytrips).findOne({
       destination_id: tripData.destination_id,
-      userEmail: tripData.userEmail,
+      userEmail: userEmail,
     });
 
     if (exists) {
-      return res.status(409).json({ message: "Trip already exists in your list" });
+      return res
+        .status(409)
+        .json({ message: "Trip already exists in your list" });
     }
 
     const result = await db.collection(mytrips).insertOne({
       ...tripData,
-      status: tripData.status || "pending", // Default to pending until Stripe clears
+      userEmail: userEmail,
+      members: [],
+      status: tripData.status || "pending",
       createdAt: new Date(),
     });
 
-    res.status(201).json({ 
-      success: true, 
-      message: "Trip added successfully", 
-      insertedId: result.insertedId 
+    res.status(201).json({
+      success: true,
+      message: "Trip added successfully",
+      insertedId: result.insertedId,
     });
   } catch (err) {
     console.error("Error adding to My Trips:", err);
@@ -62,18 +73,22 @@ const addToMyTrips = async (req, res) => {
   }
 };
 
-// DELETE My Trip
+// delete
 const deleteMyTrip = async (req, res) => {
   try {
     const db = await connectDB();
     const { id } = req.params;
+    const userEmail = req.user.email;
 
     const result = await db.collection(mytrips).deleteOne({
       _id: new ObjectId(id),
+      userEmail: userEmail,
     });
 
     if (result.deletedCount === 0) {
-      return res.status(404).json({ message: "Trip not found" });
+      return res
+        .status(404)
+        .json({ message: "Trip not found or unauthorized" });
     }
 
     res.status(200).json({ message: "Trip deleted successfully" });
