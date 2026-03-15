@@ -20,6 +20,8 @@ const adminRoutes = require("./routes/adminRoutes");
 
 const app = express();
 const port = process.env.PORT || 5000;
+const dns = require("node:dns/promises");
+dns.setServers(["1.1.1.1"]);
 
 // Middleware
 app.use(express.json());
