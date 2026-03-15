@@ -223,5 +223,45 @@ const ResetPassword = async (req, res) => {
     return res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
+const { ObjectId } = require('mongodb');  
 
-module.exports ={getUser, getSingleUser, createNewUser, ForgotPassword, ResetPassword}
+const updateProfile = async (req, res) => {
+  try {
+     
+    const { userId, fullName, image, phone } = req.body;
+    
+    if (!userId) {
+       return res.status(400).json({ success: false, message: "User ID is missing" });
+    }
+
+    const db = await connectDB();
+    
+   
+    const updateData = {};
+    if (fullName) updateData.fullName = fullName;
+    if (image) updateData.image = image;
+    if (phone) updateData.phone = phone;  
+
+    const result = await db.collection("users").updateOne(
+      { _id: new ObjectId(userId) },
+      { $set: updateData }  
+    );
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    return res.status(200).json({ 
+      success: true, 
+      message: "Profile updated successfully",
+      updatedFields: updateData 
+    });
+  } catch (error) {
+    console.error("Backend Error:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+
+
+module.exports ={getUser, getSingleUser, createNewUser, ForgotPassword, ResetPassword, updateProfile}
