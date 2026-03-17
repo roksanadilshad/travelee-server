@@ -102,35 +102,6 @@ const getDestinations = async (req, res) => {
   }
 };
 
-// const getDestinationById = async (req, res) => {
-//   try {
-//     const { id } = req.params;
-//     const db = await connectDB();
-
-//     const query = {
-//       $or: [
-//         { destination_id: id },
-//         { _id: ObjectId.isValid(id) ? new ObjectId(id) : null },
-//         { tripId: id }
-//       ].filter(Boolean)
-//     };
-
-//     let data = await db.collection("destinations").findOne(query);
-
-//     if (!data) {
-//       data = await db.collection("itineraries").findOne(query);
-//     }
-
-//     if (!data) {
-//       return res.status(404).send({ error: "Destination not found" });
-//     }
-
-//     res.status(200).send(data);
-//   } catch (err) {
-//     console.error("Fetch Error:", err);
-//     res.status(500).send({ error: "Server error" });
-//   }
-// };
 
 const getDestinationById = async (req, res) => {
   try {
@@ -233,7 +204,7 @@ const getTrendingDestinations = async (req, res) => {
       .limit(8)
       .toArray();
 
-    // Fallback: If no one flagged "isTrending", show top popularity items
+   
     if (data.length === 0) {
       data = await db
         .collection(destinations)
@@ -260,7 +231,7 @@ const getRecommendations = async (req, res) => {
       .find({ userEmail: email })
       .toArray();
 
-    // If wishlist is empty, return an empty array (no recommendations)
+    // If wishlist is empty, return an empty array 
     if (userWishlist.length === 0) {
       return res.send([]);
     }
@@ -284,7 +255,7 @@ const getRecommendations = async (req, res) => {
       (w) => new ObjectId(w.destinationMongoId),
     );
 
-    // 3. Find destinations matching ANY of these traits, excluding the ones already wishlisted
+    // 3. Find destinations matching ANY of these traits, excluding the ones already 
     const recommendations = await db
       .collection("destinations")
       .find({
