@@ -2,9 +2,9 @@ const { getDB, connectDB } = require("../config/db");
 const { destinations } = require("../constants/collections");
 const { ObjectId } = require("mongodb");
 
-
 const getDestinations = async (req, res) => {
-  const { city,
+  const {
+    city,
     country,
     region,
     duration,
@@ -13,10 +13,10 @@ const getDestinations = async (req, res) => {
     month,
     page = 1,
     limit = 10,
-    sort
+    sort,
   } = req.query;
 
-  const db = await connectDB()
+  const db = await connectDB();
 
   let filters = [];
 
@@ -25,20 +25,20 @@ const getDestinations = async (req, res) => {
       $or: [
         { city: { $regex: city, $options: "i" } },
         { country: { $regex: city, $options: "i" } },
-        { region: { $regex: city, $options: "i" } }
-      ]
+        { region: { $regex: city, $options: "i" } },
+      ],
     });
   }
 
   if (duration && duration !== "Any") {
     filters.push({
-      duration: { $regex: duration, $options: "i" }
+      duration: { $regex: duration, $options: "i" },
     });
   }
 
   if (budget) {
     filters.push({
-      price: { $regex: budget, $options: "i" }
+      price: { $regex: budget, $options: "i" },
     });
   }
 
@@ -48,7 +48,7 @@ const getDestinations = async (req, res) => {
 
   if (month && month !== "Any") {
     filters.push({
-      best_time_to_visit: { $regex: month, $options: "i" }
+      best_time_to_visit: { $regex: month, $options: "i" },
     });
   }
 
@@ -61,7 +61,9 @@ const getDestinations = async (req, res) => {
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const lim = parseInt(limit);
 
-    const totalCount = await db.collection("destinations").countDocuments(query);
+    const totalCount = await db
+      .collection("destinations")
+      .countDocuments(query);
     const totalPages = Math.ceil(totalCount / lim);
 
     let data = await db
@@ -74,7 +76,6 @@ const getDestinations = async (req, res) => {
     //(Price Sorting)
     if (sort === "priceLow" || sort === "priceHigh") {
       data.sort((a, b) => {
-
         const cleanA = a.price?.replace(/[^0-9-]/g, "") || "";
         const cleanB = b.price?.replace(/[^0-9-]/g, "") || "";
 
@@ -105,21 +106,45 @@ const getDestinations = async (req, res) => {
 const getDestinationById = async (req, res) => {
   try {
     const { id } = req.params;
-    if (!ObjectId.isValid(id)) {
-      return res.status(400).send({ error: "Invalid ID" });
+
+    
+    const db = req.app.locals.db;
+
+    if (!db) {
+      return res
+        .status(500)
+        .send({ error: "Database connection not established" });
     }
 
-    const db = await connectDB();;
-    const destination = await db
-      .collection(destinations)
-      .findOne({ _id: new ObjectId(id) });
+    let queryConditions = [];
 
-    if (!destination) {
+    
+    if (ObjectId.isValid(id)) {
+      queryConditions.push({ _id: new ObjectId(id) });
+    }
+
+   
+    queryConditions.push({ destination_id: id });
+    queryConditions.push({ tripId: id });
+
+    const query = { $or: queryConditions };
+
+   
+    let data = await db.collection("destinations").findOne(query);
+
+   
+    if (!data) {
+      data = await db.collection("itineraries").findOne(query);
+    }
+
+    if (!data) {
       return res.status(404).send({ error: "Destination not found" });
     }
-    res.send(destination);
+
+    
+    res.status(200).send(data);
   } catch (err) {
-    console.error(err);
+    console.error("Fetch Error:", err);
     res.status(500).send({ error: "Server error" });
   }
 };
@@ -170,7 +195,7 @@ const getRelatedDestinations = async (req, res) => {
 const getTrendingDestinations = async (req, res) => {
   try {
     const db = await connectDB();
-    
+
     // Primary query: look for flagged trending items
     let data = await db
       .collection(destinations)
@@ -179,7 +204,7 @@ const getTrendingDestinations = async (req, res) => {
       .limit(8)
       .toArray();
 
-    // Fallback: If no one flagged "isTrending", show top popularity items
+   
     if (data.length === 0) {
       data = await db
         .collection(destinations)
@@ -201,23 +226,36 @@ const getRecommendations = async (req, res) => {
     const db = await connectDB();
 
     // 1. Fetch the user's current wishlist
-    const userWishlist = await db.collection("wishlists").find({ userEmail: email }).toArray();
+    const userWishlist = await db
+      .collection("wishlists")
+      .find({ userEmail: email })
+      .toArray();
 
-    // If wishlist is empty, return an empty array (no recommendations)
+    // If wishlist is empty, return an empty array 
     if (userWishlist.length === 0) {
       return res.send([]);
     }
 
     // 2. Extract unique traits from the wishlist
-    const countries = [...new Set(userWishlist.map(w => w.country).filter(Boolean))];
-    const regions = [...new Set(userWishlist.map(w => w.region).filter(Boolean))];
-    const durations = [...new Set(userWishlist.map(w => w.duration).filter(Boolean))];
-    const budgets = [...new Set(userWishlist.map(w => w.avgBudget).filter(Boolean))];
-    
-    // Extract Mongo IDs to exclude items already in the wishlist
-    const wishlistedIds = userWishlist.map(w => new ObjectId(w.destinationMongoId));
+    const countries = [
+      ...new Set(userWishlist.map((w) => w.country).filter(Boolean)),
+    ];
+    const regions = [
+      ...new Set(userWishlist.map((w) => w.region).filter(Boolean)),
+    ];
+    const durations = [
+      ...new Set(userWishlist.map((w) => w.duration).filter(Boolean)),
+    ];
+    const budgets = [
+      ...new Set(userWishlist.map((w) => w.avgBudget).filter(Boolean)),
+    ];
 
-    // 3. Find destinations matching ANY of these traits, excluding the ones already wishlisted
+    // Extract Mongo IDs to exclude items already in the wishlist
+    const wishlistedIds = userWishlist.map(
+      (w) => new ObjectId(w.destinationMongoId),
+    );
+
+    // 3. Find destinations matching ANY of these traits, excluding the ones already 
     const recommendations = await db
       .collection("destinations")
       .find({
@@ -226,8 +264,8 @@ const getRecommendations = async (req, res) => {
           { country: { $in: countries } },
           { region: { $in: regions } },
           { duration: { $in: durations } },
-          { avgBudget: { $in: budgets } }
-        ]
+          { avgBudget: { $in: budgets } },
+        ],
       })
       .sort({ popularityScore: -1 }) // Sort by highest rating/popularity first
       .limit(6) // Limit to 6 suggestions
@@ -240,5 +278,10 @@ const getRecommendations = async (req, res) => {
   }
 };
 
-
-module.exports = { getTrendingDestinations, getDestinations, getDestinationById, getRelatedDestinations, getRecommendations };
+module.exports = {
+  getTrendingDestinations,
+  getDestinations,
+  getDestinationById,
+  getRelatedDestinations,
+  getRecommendations,
+};

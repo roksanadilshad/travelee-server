@@ -1,3 +1,5 @@
+
+
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
@@ -83,8 +85,8 @@ io.on("connection", (socket) => {
 
   socket.on("send-invite", (data) => {
     if (data && data.friendId) {
-      io.to(data.friendId).emit("receive-invite", data);
-      console.log(`📩 Real-time invite sent to: ${data.friendId}`);
+      socket.to(data.friendId).emit("receive-invite", data);
+      console.log(`📩 Real-time invite from ${data.senderEmail} to: ${data.friendId}`);
     }
   });
 
@@ -138,38 +140,51 @@ const transporter = nodemailer.createTransport({
 });
 
 app.post("/my-trips/invite-hybrid", async (req, res) => {
-  const { tripId, friendEmail, senderName, tripTitle, friendId } = req.body;
+  const { tripId, friendEmail, senderName, senderEmail, tripTitle, friendId } = req.body;
 
   try {
-    const frontendURL = process.env.CLIENT_URL || "http://localhost:3000";
-    const inviteLink = `${frontendURL}/itinerary/${tripId}?invited=true`;
+    const frontendURL = process.env.CLIENT_URL || "https://travelee-client.vercel.app";
+    const inviteLink = `${frontendURL}/destinations/${tripId}?invited=true&by=${encodeURIComponent(senderEmail)}`;
 
     await transporter.sendMail({
       from: `"Travelee" <${process.env.MAIL_USER}>`,
       to: friendEmail,
-      subject: `Trip Invitation from ${senderName}`,
+      subject: `Trip Invitation: Join ${senderName} to ${tripTitle}`,
       html: `
-        <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-          <h2 style="color: #0EA5A4;">Trip Invitation!</h2>
-          <p>Hi there,</p>
-          <p><b>${senderName}</b> has invited you to collaborate on the trip: <b>${tripTitle}</b>.</p>
-          <p>Click the button below to join the planning:</p>
-          <a href="${inviteLink}" style="display: inline-block; padding: 12px 25px; background-color: #0EA5A4; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: bold;">Accept & Join</a>
-          <p style="margin-top: 20px; font-size: 12px; color: #888;">If the button doesn't work, copy-paste this link: ${inviteLink}</p>
+        <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 40px; background-color: #f4f7f6;">
+          <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.05);">
+            <div style="background-color: #0EA5A4; padding: 30px; text-align: center;">
+              <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: bold;">Trip Invitation!</h1>
+            </div>
+            <div style="padding: 40px; text-align: center;">
+              <p style="font-size: 18px; color: #333333; margin-bottom: 20px;">Hi there,</p>
+              <p style="font-size: 16px; color: #555555; line-height: 1.6; margin-bottom: 30px;">
+                <b>${senderName}</b> has invited you to explore and collaborate on an amazing trip to <b>${tripTitle}</b>.
+              </p>
+              <a href="${inviteLink}" style="display: inline-block; padding: 16px 32px; background-color: #0EA5A4; color: #ffffff; text-decoration: none; border-radius: 50px; font-weight: bold; transition: all 0.3s ease;">View Trip Details</a>
+              <p style="margin-top: 35px; font-size: 13px; color: #999999;">If the button doesn't work, copy-paste this link into your browser:<br/> ${inviteLink}</p>
+            </div>
+            <div style="background-color: #f9f9f9; padding: 20px; text-align: center; border-top: 1px solid #eeeeee;">
+              <p style="font-size: 12px; color: #aaaaaa; margin: 0;">&copy; 2026 Travelee. Explore the world together.</p>
+            </div>
+          </div>
         </div>
       `,
     });
 
     if (friendId) {
-      io.to(friendId).emit("receive-invite", { senderName, tripId, tripTitle });
+      io.to(friendId).emit("receive-invite", { 
+        senderName, 
+        senderEmail, 
+        tripId, 
+        tripTitle 
+      });
     }
 
-    res
-      .status(200)
-      .json({
-        success: true,
-        message: "Invited successfully via Email & Socket!",
-      });
+    res.status(200).json({
+      success: true,
+      message: "Invitation sent successfully!",
+    });
   } catch (err) {
     console.error("Mail Error:", err);
     res.status(500).json({ success: false, message: "Email failed to send." });
@@ -183,7 +198,7 @@ app.use("/reviews", reviewRoutes);
 app.use("/user", usersRoutes);
 app.use("/my-trips", myTripsRoutes);
 app.use("/api/tripreviews", tripreviewRoutes);
-app.use("/wishlists", wishlistRoutes);
+app.use("/api/wishlist", wishlistRoutes); 
 app.use("/itinerary", itineraryWeatherRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/admin", adminRoutes);
