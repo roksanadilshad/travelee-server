@@ -1,8 +1,11 @@
+
+
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const http = require("http");
 const { Server } = require("socket.io");
+const nodemailer = require("nodemailer");
 const { connectDB } = require("./config/db");
 
 // Routes Import
@@ -14,12 +17,13 @@ const myTripsRoutes = require("./routes/myTripsRoutes");
 const tripreviewRoutes = require("./routes/tripreviewRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
 const wishlistRoutes = require("./routes/wishlistRoutes");
-//const paymentRoutes = require('./routes/paymentRoutes');
 const itineraryWeatherRoutes = require("./routes/itineraryWeatherRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 
 const app = express();
 const port = process.env.PORT || 5000;
+const dns = require("node:dns/promises");
+dns.setServers(["1.1.1.1"]);
 
 // Middleware
 app.use(express.json());
@@ -42,7 +46,7 @@ app.use(
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "auth-token"], // <-- add auth-token
+    allowedHeaders: ["Content-Type", "Authorization", "auth-token"],
   }),
 );
 
@@ -63,94 +67,60 @@ const io = new Server(server, {
     origin: allowedOrigins,
     methods: ["GET", "POST"],
   },
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-allowedHeaders: ["Content-Type", "Authorization", "auth-token"]
 });
+
+app.locals.io = io;
 
 let activeUsers = {};
 
 io.on("connection", (socket) => {
-  console.log(` New client connected: ${socket.id}`);
+  console.log(`🚀 New client connected: ${socket.id}`);
 
-  // Personal room for notifications/invites
-  socket.on("join-personal-room", (userId) => {
-    if (userId) {
-      socket.join(userId);
-      console.log(` User joined personal room: ${userId}`);
+  socket.on("join-self", (email) => {
+    if (email) {
+      socket.join(email);
+      console.log(`👤 User joined personal room: ${email}`);
     }
   });
 
-  // Sending an invite to a friend
   socket.on("send-invite", (data) => {
-    // data = { friendId, senderName, tripId, tripTitle }
     if (data && data.friendId) {
-      io.to(data.friendId).emit("receive-invite", data);
-      console.log(` Invite sent to: ${data.friendId}`);
+      socket.to(data.friendId).emit("receive-invite", data);
+      console.log(`📩 Real-time invite from ${data.senderEmail} to: ${data.friendId}`);
     }
   });
 
-  // Joining a trip collaboration room
   socket.on("join-trip", ({ tripId, user }) => {
-    // Safety check to prevent "undefined" or "temp-room" issues
-    if (!tripId || tripId === "temp-id" || !user || !user.email) {
-      return console.log(" Invalid tripId or user data for collaboration.");
-    }
-
+    if (!tripId || tripId === "temp-id" || !user || !user.email) return;
     socket.join(tripId);
     socket.currentTripId = tripId;
     socket.userEmail = user.email;
 
     if (!activeUsers[tripId]) activeUsers[tripId] = [];
-
-    // Check if the user is already tracked in activeUsers for this room
     const alreadyInRoom = activeUsers[tripId].find(
       (u) => u.socketId === socket.id,
     );
     if (!alreadyInRoom) {
-      const displayName = user.name || user.email.split("@")[0];
-      activeUsers[tripId].push({
-        ...user,
-        name: displayName,
-        socketId: socket.id,
-      });
+      activeUsers[tripId].push({ ...user, socketId: socket.id });
     }
-
-    // Emit unique user list to everyone in the room
     const uniqueUsers = Array.from(
       new Map(activeUsers[tripId].map((u) => [u.email, u])).values(),
     );
     io.to(tripId).emit("user-presence", uniqueUsers);
-
-    console.log(
-      `✈️ ${user.name || user.email} joined trip collaboration: ${tripId}`,
-    );
   });
 
-  // Real-time activity sync (Itinerary updates)
   socket.on("send-activity", (data) => {
     if (data && data.tripId) {
-      console.log("Broadcast activity to room:", data.tripId);
       socket.to(data.tripId).emit("receive-activity", data);
     }
   });
 
-  // Typing indicators
-  socket.on("typing-start", ({ tripId, userName }) => {
-    if (tripId) {
-      socket.to(tripId).emit("user-is-typing", { userName });
-    }
-  });
-
-  // Disconnect handling
   socket.on("disconnect", () => {
     const tripId = socket.currentTripId;
     if (tripId && activeUsers[tripId]) {
-      // Remove the disconnected socket
       activeUsers[tripId] = activeUsers[tripId].filter(
         (u) => u.socketId !== socket.id,
       );
-
       const uniqueUsers = Array.from(
         new Map(activeUsers[tripId].map((u) => [u.email, u])).values(),
       );
@@ -160,6 +130,67 @@ io.on("connection", (socket) => {
   });
 });
 
+// --- Hybrid Email Invitation Route ---
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.MAIL_USER,
+    pass: process.env.MAIL_PASS,
+  },
+});
+
+app.post("/my-trips/invite-hybrid", async (req, res) => {
+  const { tripId, friendEmail, senderName, senderEmail, tripTitle, friendId } = req.body;
+
+  try {
+    const frontendURL = process.env.CLIENT_URL || "https://travelee-client.vercel.app";
+    const inviteLink = `${frontendURL}/destinations/${tripId}?invited=true&by=${encodeURIComponent(senderEmail)}`;
+
+    await transporter.sendMail({
+      from: `"Travelee" <${process.env.MAIL_USER}>`,
+      to: friendEmail,
+      subject: `Trip Invitation: Join ${senderName} to ${tripTitle}`,
+      html: `
+        <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 40px; background-color: #f4f7f6;">
+          <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.05);">
+            <div style="background-color: #0EA5A4; padding: 30px; text-align: center;">
+              <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: bold;">Trip Invitation!</h1>
+            </div>
+            <div style="padding: 40px; text-align: center;">
+              <p style="font-size: 18px; color: #333333; margin-bottom: 20px;">Hi there,</p>
+              <p style="font-size: 16px; color: #555555; line-height: 1.6; margin-bottom: 30px;">
+                <b>${senderName}</b> has invited you to explore and collaborate on an amazing trip to <b>${tripTitle}</b>.
+              </p>
+              <a href="${inviteLink}" style="display: inline-block; padding: 16px 32px; background-color: #0EA5A4; color: #ffffff; text-decoration: none; border-radius: 50px; font-weight: bold; transition: all 0.3s ease;">View Trip Details</a>
+              <p style="margin-top: 35px; font-size: 13px; color: #999999;">If the button doesn't work, copy-paste this link into your browser:<br/> ${inviteLink}</p>
+            </div>
+            <div style="background-color: #f9f9f9; padding: 20px; text-align: center; border-top: 1px solid #eeeeee;">
+              <p style="font-size: 12px; color: #aaaaaa; margin: 0;">&copy; 2026 Travelee. Explore the world together.</p>
+            </div>
+          </div>
+        </div>
+      `,
+    });
+
+    if (friendId) {
+      io.to(friendId).emit("receive-invite", { 
+        senderName, 
+        senderEmail, 
+        tripId, 
+        tripTitle 
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Invitation sent successfully!",
+    });
+  } catch (err) {
+    console.error("Mail Error:", err);
+    res.status(500).json({ success: false, message: "Email failed to send." });
+  }
+});
+
 // Route Setup
 app.use("/destinations", destinationRoutes);
 app.use("/itineraries", itineraryRoutes);
@@ -167,10 +198,9 @@ app.use("/reviews", reviewRoutes);
 app.use("/user", usersRoutes);
 app.use("/my-trips", myTripsRoutes);
 app.use("/api/tripreviews", tripreviewRoutes);
-app.use("/wishlists", wishlistRoutes);
+app.use("/api/wishlist", wishlistRoutes); 
 app.use("/itinerary", itineraryWeatherRoutes);
-app.use('/api/payments', paymentRoutes);
-
+app.use("/api/payments", paymentRoutes);
 app.use("/admin", adminRoutes);
 
 app.get("/", (req, res) => {

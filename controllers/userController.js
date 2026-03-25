@@ -2,6 +2,7 @@ const { connectDB } = require("../config/db");
 const bcrypt = require("bcrypt");
 const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
+const { ObjectId } = require('mongodb'); // Added ObjectId requirement here
 
 const nodemailer = require("nodemailer");
 
@@ -47,11 +48,8 @@ const getSingleUser = async (req, res) => {
       { expiresIn: "7d" },
     );
     
-
     console.log("Backend token :", token);
     
-
-
     return res.status(200).json({
       success: true,
       data: user || null,
@@ -67,6 +65,7 @@ const getSingleUser = async (req, res) => {
     });
   }
 };
+
 const createNewUser = async (req, res) => {
       try {
     const { fullName, email, password, provider, image } = req.body;
@@ -108,7 +107,7 @@ if (provider === "Credential") {
 
         const userPassword = provider === "Credential" ? hashedPassword : null;
 
-    //  Create user object
+    //  Create user object (Added 'status: active' by default)
     const newUser = {
       fullName,
       email,
@@ -116,11 +115,10 @@ if (provider === "Credential") {
       provider,
       password: userPassword,
       role: "user",
+      status: "active", // Added status field here
       createdAt: new Date(),
         };
         
-        
-
     // Insert into DB
         const result = await db.collection("users").insertOne(newUser);
         console.log("newUser :",result);
@@ -146,7 +144,6 @@ const ForgotPassword = async (req, res) => {
     const { email } = req.body;
     const db = await connectDB();
 
-    
      if (!email) {
       return res.status(400).json({ success: false, message: "Email is required" });
     }
@@ -187,7 +184,6 @@ const ForgotPassword = async (req, res) => {
   }
 };
 
-// controllers/userController.js
 const ResetPassword = async (req, res) => {
   try {
     const { token, newPassword } = req.body;
@@ -224,4 +220,97 @@ const ResetPassword = async (req, res) => {
   }
 };
 
-module.exports ={getUser, getSingleUser, createNewUser, ForgotPassword, ResetPassword}
+const updateProfile = async (req, res) => {
+  try {
+     
+    const { userId, fullName, image, phone } = req.body;
+    
+    if (!userId) {
+       return res.status(400).json({ success: false, message: "User ID is missing" });
+    }
+
+    const db = await connectDB();
+    
+    const updateData = {};
+    if (fullName) updateData.fullName = fullName;
+    if (image) updateData.image = image;
+    if (phone) updateData.phone = phone;  
+
+    const result = await db.collection("users").updateOne(
+      { _id: new ObjectId(userId) },
+      { $set: updateData }  
+    );
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    return res.status(200).json({ 
+      success: true, 
+      message: "Profile updated successfully",
+      updatedFields: updateData 
+    });
+  } catch (error) {
+    console.error("Backend Error:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ================= NEW CONTROLLERS ADDED =================
+
+// Delete User Controller
+const deleteUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const db = await connectDB();
+
+    const result = await db.collection("users").deleteOne({ _id: new ObjectId(id) });
+
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    return res.status(200).json({ success: true, message: "User deleted successfully" });
+  } catch (error) {
+    console.error("Delete User Error:", error);
+    return res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
+// Update User Status (Active/Block) Controller
+const updateUserStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body; // Expects 'active' or 'blocked'
+
+    if (!["active", "blocked"].includes(status)) {
+      return res.status(400).json({ success: false, message: "Invalid status value" });
+    }
+
+    const db = await connectDB();
+    const result = await db.collection("users").updateOne(
+      { _id: new ObjectId(id) },
+      { $set: { status: status } }
+    );
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    return res.status(200).json({ success: true, message: `User status updated to ${status}` });
+  } catch (error) {
+    console.error("Update Status Error:", error);
+    return res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
+module.exports = {
+  getUser, 
+  getSingleUser, 
+  createNewUser, 
+  ForgotPassword, 
+  ResetPassword, 
+  updateProfile,
+  deleteUser,        // Exported new function
+  updateUserStatus   // Exported new function
+};
