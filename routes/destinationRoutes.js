@@ -6,8 +6,11 @@ const {
   getRelatedDestinations,
   getTrendingDestinations,
   getRecommendations,
-  addDestination
+  addDestination,
+  toggleDestinationVisibility,
+  deleteDestination
 } = require("../controllers/destinationController");
+const authMiddleware = require("../middlewares/authMiddleware");
 
 router.get("/", getDestinations);
 router.get("/trending", getTrendingDestinations);
@@ -17,5 +20,6 @@ router.get("/:id", getDestinationById);
 
 router.get("/:id/related", getRelatedDestinations);
 router.post("/add-destination", addDestination);
-
+router.delete("/:id",authMiddleware, deleteDestination);
+router.patch("/:id/visibility",authMiddleware, toggleDestinationVisibility);
 module.exports = router;

@@ -344,6 +344,46 @@ const addDestination = async (req, res) => {
     res.status(500).send({ error: "Server error during adding destination" });
   }
 };
+// Delete Destination
+const deleteDestination = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const db = await connectDB();
+    const result = await db.collection("destinations").deleteOne({ _id: new ObjectId(id) });
+
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ success: false, message: "Destination not found" });
+    }
+    return res.status(200).json({ success: true, message: "Destination deleted successfully" });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
+// Toggle Visibility (Hide/Show)
+const toggleDestinationVisibility = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { isVisible } = req.body; // Expects true or false
+
+    const db = await connectDB();
+    const result = await db.collection("destinations").updateOne(
+      { _id: new ObjectId(id) },
+      { $set: { isVisible: isVisible } }
+    );
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ success: false, message: "Destination not found" });
+    }
+
+    return res.status(200).json({ 
+      success: true, 
+      message: `Destination is now ${isVisible ? 'visible' : 'hidden'}` 
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
 
 
 
@@ -353,5 +393,7 @@ module.exports = {
   getDestinationById,
   getRelatedDestinations,
   getRecommendations,
-  addDestination
+  addDestination,
+  deleteDestination,
+  toggleDestinationVisibility
 };
