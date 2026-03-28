@@ -6,6 +6,7 @@ const {
   getRelatedDestinations,
   getTrendingDestinations,
   getRecommendations,
+  addDestination
 } = require("../controllers/destinationController");
 
 router.get("/", getDestinations);
@@ -15,5 +16,6 @@ router.get("/recommendations/:email", getRecommendations);
 router.get("/:id", getDestinationById);
 
 router.get("/:id/related", getRelatedDestinations);
+router.post("/add-destination", addDestination);
 
 module.exports = router;
