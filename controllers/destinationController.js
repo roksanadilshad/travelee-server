@@ -107,7 +107,7 @@ const getDestinationById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    
+
     const db = req.app.locals.db;
 
     if (!db) {
@@ -118,21 +118,21 @@ const getDestinationById = async (req, res) => {
 
     let queryConditions = [];
 
-    
+
     if (ObjectId.isValid(id)) {
       queryConditions.push({ _id: new ObjectId(id) });
     }
 
-   
+
     queryConditions.push({ destination_id: id });
     queryConditions.push({ tripId: id });
 
     const query = { $or: queryConditions };
 
-   
+
     let data = await db.collection("destinations").findOne(query);
 
-   
+
     if (!data) {
       data = await db.collection("itineraries").findOne(query);
     }
@@ -141,7 +141,7 @@ const getDestinationById = async (req, res) => {
       return res.status(404).send({ error: "Destination not found" });
     }
 
-    
+
     res.status(200).send(data);
   } catch (err) {
     console.error("Fetch Error:", err);
@@ -204,7 +204,7 @@ const getTrendingDestinations = async (req, res) => {
       .limit(8)
       .toArray();
 
-   
+
     if (data.length === 0) {
       data = await db
         .collection(destinations)
@@ -278,10 +278,80 @@ const getRecommendations = async (req, res) => {
   }
 };
 
+
+
+
+// Add Destination from Admin Dashboard
+const addDestination = async (req, res) => {
+  try {
+    const db = await connectDB();
+    const destinationData = req.body;
+
+    const lastDest = await db.collection("destinations")
+      .find({ destination_id: { $regex: /^d\d+/ } })
+      .sort({ _id: -1 })
+      .limit(1)
+      .toArray();
+
+    let nextId;
+    if (lastDest.length > 0) {
+      const lastNumericId = parseInt(lastDest[0].destination_id.replace(/\D/g, ''));
+
+      if (!isNaN(lastNumericId)) {
+        nextId = "d" + (lastNumericId + 1);
+      } else {
+        nextId = "d2001";
+      }
+    } else {
+      nextId = "d2001";
+    }
+
+    const finalData = {
+      destination_id: nextId,
+      country: destinationData.country,
+      city: destinationData.city,
+      region: destinationData.region,
+      coordinates: destinationData.coordinates,
+      timezone: destinationData.timezone,
+      best_time_to_visit: destinationData.best_time_to_visit,
+      currency: destinationData.currency,
+      languages_spoken: destinationData.languages_spoken,
+      safety_index: destinationData.safety_index,
+      description: destinationData.description,
+      duration: destinationData.duration,
+      price: destinationData.price,
+      popularityScore: destinationData.popularityScore,
+      avgBudget: destinationData.avgBudget,
+      climate: destinationData.climate,
+      media: destinationData.media,
+      createdAt: new Date(),
+    };
+
+    const result = await db.collection("destinations").insertOne(finalData);
+
+    if (result.insertedId) {
+      res.status(201).send({
+        success: true,
+        message: "Destination added successfully",
+        id: result.insertedId,
+        destination_id: nextId
+      });
+    } else {
+      res.status(400).send({ error: "Failed to add destination" });
+    }
+  } catch (err) {
+    console.error("Error adding destination:", err);
+    res.status(500).send({ error: "Server error during adding destination" });
+  }
+};
+
+
+
 module.exports = {
   getTrendingDestinations,
   getDestinations,
   getDestinationById,
   getRelatedDestinations,
   getRecommendations,
+  addDestination
 };
