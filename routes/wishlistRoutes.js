@@ -5,9 +5,10 @@ const {
   removeFromWishlist,
   getUserWishlist,
 } = require("../controllers/wishlistController");
+const authMiddleware = require("../middlewares/authMiddleware");
 
-router.post("/", addToWishlist);
-router.delete("/", removeFromWishlist);
-router.get("/:email", getUserWishlist);
+router.post("/",authMiddleware, addToWishlist);
+router.delete("/",authMiddleware, removeFromWishlist);
+router.get("/:email",authMiddleware, getUserWishlist);
 
 module.exports = router;
