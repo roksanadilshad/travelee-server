@@ -18,6 +18,7 @@ const wishlistRoutes = require("./routes/wishlistRoutes");
 const itineraryWeatherRoutes = require("./routes/itineraryWeatherRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const dealRoutes = require('./routes/dealRoutes');
+const chatRoutes = require('./routes/chatRoutes');
 
 
 const app = express();
@@ -209,6 +210,7 @@ app.use("/api/payments", paymentRoutes);
 app.use("/admin", adminRoutes);
 app.use('/api', dealRoutes);
 app.use("/api/trip", getAllTrips);
+app.use('/api/chat', chatRoutes);
 
 app.get("/", (req, res) => {
   res.send("Travelee Server is running with Real-time Engine...");
