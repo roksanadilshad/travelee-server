@@ -30,25 +30,33 @@ const getUser = async (req, res) => {
 
 const getSingleUser = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email } = req.body;
     const db = await connectDB();
 
     if (!email) {
-      return res.status(400).json({
-        success: false,
-        message: "Email is required",
-      });
+      return res.status(400).json({ success: false, message: "Email is required" });
     }
 
     const user = await db.collection("users").findOne({ email });
 
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    // --- STATUS CHECK START ---
+    if (user.status === "blocked") {
+      return res.status(403).json({
+        success: false,
+        message: "Your account has been blocked. Please contact support.",
+      });
+    }
+    // --- STATUS CHECK END ---
+
     const token = jwt.sign(
-      { id: user?._id, email: user?.email },
+      { id: user?._id, email: user?.email, status: user?.status },
       process.env.JWT_SECRET,
       { expiresIn: "7d" },
     );
-    
-    console.log("Backend token :", token);
     
     return res.status(200).json({
       success: true,
@@ -58,11 +66,7 @@ const getSingleUser = async (req, res) => {
 
   } catch (err) {
     console.error("Get User Error:", err);
-
-    return res.status(500).json({
-      success: false,
-      message: "Internal server error",
-    });
+    return res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
 
