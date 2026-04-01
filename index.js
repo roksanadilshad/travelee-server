@@ -1,5 +1,3 @@
-
-
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
@@ -21,9 +19,11 @@ const itineraryWeatherRoutes = require("./routes/itineraryWeatherRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const dealRoutes = require('./routes/dealRoutes');
 
+
 const app = express();
 const port = process.env.PORT || 5000;
 const dns = require("node:dns/promises");
+const { getAllTrips } = require("./controllers/tripController");
 dns.setServers(["1.1.1.1"]);
 
 // Middleware
@@ -87,7 +87,9 @@ io.on("connection", (socket) => {
   socket.on("send-invite", (data) => {
     if (data && data.friendId) {
       socket.to(data.friendId).emit("receive-invite", data);
-      console.log(`📩 Real-time invite from ${data.senderEmail} to: ${data.friendId}`);
+      console.log(
+        `📩 Real-time invite from ${data.senderEmail} to: ${data.friendId}`,
+      );
     }
   });
 
@@ -141,10 +143,12 @@ const transporter = nodemailer.createTransport({
 });
 
 app.post("/my-trips/invite-hybrid", async (req, res) => {
-  const { tripId, friendEmail, senderName, senderEmail, tripTitle, friendId } = req.body;
+  const { tripId, friendEmail, senderName, senderEmail, tripTitle, friendId } =
+    req.body;
 
   try {
-    const frontendURL = process.env.CLIENT_URL || "https://travelee-client.vercel.app";
+    const frontendURL =
+      process.env.CLIENT_URL || "https://travelee-client.vercel.app";
     const inviteLink = `${frontendURL}/destinations/${tripId}?invited=true&by=${encodeURIComponent(senderEmail)}`;
 
     await transporter.sendMail({
@@ -174,11 +178,11 @@ app.post("/my-trips/invite-hybrid", async (req, res) => {
     });
 
     if (friendId) {
-      io.to(friendId).emit("receive-invite", { 
-        senderName, 
-        senderEmail, 
-        tripId, 
-        tripTitle 
+      io.to(friendId).emit("receive-invite", {
+        senderName,
+        senderEmail,
+        tripId,
+        tripTitle,
       });
     }
 
@@ -199,11 +203,12 @@ app.use("/reviews", reviewRoutes);
 app.use("/user", usersRoutes);
 app.use("/my-trips", myTripsRoutes);
 app.use("/api/tripreviews", tripreviewRoutes);
-app.use("/api/wishlist", wishlistRoutes); 
+app.use("/api/wishlist", wishlistRoutes);
 app.use("/itinerary", itineraryWeatherRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/admin", adminRoutes);
 app.use('/api', dealRoutes);
+app.use("/api/trip", getAllTrips);
 
 app.get("/", (req, res) => {
   res.send("Travelee Server is running with Real-time Engine...");
@@ -214,3 +219,4 @@ server.listen(port, () => {
 });
 
 module.exports = app;
+
